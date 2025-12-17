@@ -17,6 +17,11 @@ import (
 	"github.com/anyfld/vistra-operation-control-room/gen/proto/v1/protov1connect"
 )
 
+const (
+	readHeaderTimeout = 10 * time.Second
+	shutdownTimeout   = 30 * time.Second
+)
+
 type ExampleServiceHandler struct{}
 
 func (h *ExampleServiceHandler) Ping(
@@ -40,10 +45,10 @@ func main() {
 		addr = ":" + port
 	}
 
-	server := &http.Server{
+	server := &http.Server{ //nolint:exhaustruct
 		Addr:              addr,
-		Handler:           h2c.NewHandler(mux, &http2.Server{}),
-		ReadHeaderTimeout: 10 * time.Second,
+		Handler:           h2c.NewHandler(mux, &http2.Server{}), //nolint:exhaustruct
+		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
 	go func() {
@@ -51,16 +56,18 @@ func main() {
 		signal.Notify(sigCh, syscall.SIGINT, syscall.SIGTERM)
 		<-sigCh
 
-		ctx, cancel := context.WithTimeout(context.Background(), 30*time.Second)
+		ctx, cancel := context.WithTimeout(context.Background(), shutdownTimeout)
 		defer cancel()
 
 		log.Println("Shutting down server...")
+
 		if err := server.Shutdown(ctx); err != nil {
 			log.Printf("Server shutdown error: %v", err)
 		}
 	}()
 
 	log.Printf("Starting server on %s", addr)
+
 	if err := server.ListenAndServe(); err != nil && err != http.ErrServerClosed {
 		log.Fatalf("Server error: %v", err)
 	}
