@@ -1,6 +1,6 @@
 module github.com/anyfld/vistra-operation-control-room
 
-go 1.23
+go 1.25.5
 
 require (
 	connectrpc.com/connect v1.18.1
