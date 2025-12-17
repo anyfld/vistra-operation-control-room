@@ -1,4 +1,4 @@
-.PHONY: build run test lint clean tidy
+.PHONY: build run test test-coverage fmt vet lint clean tidy
 
 build:
 	go build -o bin/server ./cmd/server
@@ -13,8 +13,17 @@ test-coverage:
 	go test -v -coverprofile=coverage.out ./...
 	go tool cover -html=coverage.out -o coverage.html
 
-lint:
-	golangci-lint run
+fmt:
+	go fmt ./...
+
+vet:
+	go vet ./...
+
+lint: fmt vet
+	@if [ ! -f custom-gcl ]; then \
+		golangci-lint custom; \
+	fi
+	./custom-gcl run --fix
 
 clean:
 	rm -rf bin/
