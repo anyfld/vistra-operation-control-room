@@ -15,6 +15,7 @@ import (
 
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
 	"github.com/anyfld/vistra-operation-control-room/gen/proto/v1/protov1connect"
+	handlers "github.com/anyfld/vistra-operation-control-room/pkg/transport/handlers"
 )
 
 const (
@@ -39,6 +40,22 @@ func main() {
 
 	mux := http.NewServeMux()
 	mux.Handle(path, httpHandler)
+
+	if path, h := protov1connect.NewMDServiceHandler(&handlers.MDHandler{}); path != "" {
+		mux.Handle(path, h)
+	}
+
+	if path, h := protov1connect.NewCameraServiceHandler(&handlers.CameraHandler{}); path != "" {
+		mux.Handle(path, h)
+	}
+
+	if path, h := protov1connect.NewCRServiceHandler(&handlers.CRHandler{}); path != "" {
+		mux.Handle(path, h)
+	}
+
+	if path, h := protov1connect.NewFDServiceHandler(&handlers.FDHandler{}); path != "" {
+		mux.Handle(path, h)
+	}
 
 	addr := ":8080"
 	if port := os.Getenv("PORT"); port != "" {
