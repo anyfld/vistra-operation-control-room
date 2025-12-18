@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
@@ -15,6 +16,7 @@ import (
 
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
 	"github.com/anyfld/vistra-operation-control-room/gen/proto/v1/protov1connect"
+	"github.com/anyfld/vistra-operation-control-room/internal/middleware"
 	handlers "github.com/anyfld/vistra-operation-control-room/pkg/transport/handlers"
 )
 
@@ -63,8 +65,10 @@ func main() {
 	}
 
 	server := &http.Server{ //nolint:exhaustruct
-		Addr:              addr,
-		Handler:           h2c.NewHandler(mux, &http2.Server{}), //nolint:exhaustruct
+		Addr: addr,
+		Handler: middleware.Middleware(
+			slog.New(slog.NewTextHandler(os.Stdout, nil)),
+		)(h2c.NewHandler(mux, new(http2.Server))),
 		ReadHeaderTimeout: readHeaderTimeout,
 	}
 
