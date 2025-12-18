@@ -5,7 +5,7 @@ go 1.25.5
 tool go.uber.org/mock/mockgen
 
 require (
-	connectrpc.com/connect v1.18.1
+	connectrpc.com/connect v1.19.1
 	github.com/joho/godotenv v1.5.1
 	github.com/kelseyhightower/envconfig v1.4.0
 	github.com/samber/lo v1.46.0
