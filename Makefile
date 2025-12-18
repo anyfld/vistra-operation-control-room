@@ -1,4 +1,4 @@
-.PHONY: build run test test-coverage fmt vet lint clean tidy
+.PHONY: build run test test-coverage fmt vet lint generate clean tidy
 
 build:
 	go build -o bin/server ./cmd/server
@@ -24,6 +24,9 @@ lint: fmt vet
 		golangci-lint custom; \
 	fi
 	./custom-gcl run --fix
+
+generate:
+	go generate ./...
 
 clean:
 	rm -rf bin/
