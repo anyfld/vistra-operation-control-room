@@ -23,12 +23,20 @@ const (
 	executionTimeMs       = 100
 )
 
+type PTZCommandEvent struct {
+	Command     *protov1.ControlCommand
+	Result      *protov1.ControlCommandResult
+	TimestampMs int64
+}
+
 type FDRepo struct {
 	mu                         sync.RWMutex
 	patternMatchingSessions    map[string]*PatternMatchingSession
 	controlCommands            map[string]*protov1.ControlCommand
 	cameraStates               map[string]*protov1.CameraState
 	cinematographyInstructions map[string]*protov1.CinematographyInstruction
+	ptzSubscribers             map[string][]chan *PTZCommandEvent
+	ptzSubscribersMu           sync.RWMutex
 }
 
 type PatternMatchingSession struct {
@@ -46,6 +54,8 @@ func NewFDRepo() *FDRepo {
 		controlCommands:            make(map[string]*protov1.ControlCommand),
 		cameraStates:               make(map[string]*protov1.CameraState),
 		cinematographyInstructions: make(map[string]*protov1.CinematographyInstruction),
+		ptzSubscribers:             make(map[string][]chan *PTZCommandEvent),
+		ptzSubscribersMu:           sync.RWMutex{},
 	}
 }
 
@@ -149,7 +159,6 @@ func (r *FDRepo) CalculateFraming(
 
 func (r *FDRepo) SendControlCommand(command *protov1.ControlCommand) *protov1.ControlCommandResult {
 	r.mu.Lock()
-	defer r.mu.Unlock()
 
 	commandID := command.GetCommandId()
 	if commandID == "" {
@@ -171,12 +180,67 @@ func (r *FDRepo) SendControlCommand(command *protov1.ControlCommand) *protov1.Co
 		}
 	}
 
-	return &protov1.ControlCommandResult{
+	result := &protov1.ControlCommandResult{
 		CommandId:       commandID,
 		Success:         true,
 		ErrorMessage:    "",
 		ResultingPtz:    resultingPtz,
 		ExecutionTimeMs: executionTimeMs,
+	}
+
+	r.mu.Unlock()
+
+	cameraID := command.GetCameraId()
+	if cameraID != "" {
+		event := &PTZCommandEvent{
+			Command:     command,
+			Result:      result,
+			TimestampMs: time.Now().UnixMilli(),
+		}
+		r.publishPTZCommand(cameraID, event)
+	}
+
+	return result
+}
+
+func (r *FDRepo) SubscribePTZCommands(cameraID string) <-chan *PTZCommandEvent {
+	r.ptzSubscribersMu.Lock()
+	defer r.ptzSubscribersMu.Unlock()
+
+	ch := make(chan *PTZCommandEvent, 100)
+	r.ptzSubscribers[cameraID] = append(r.ptzSubscribers[cameraID], ch)
+
+	return ch
+}
+
+func (r *FDRepo) UnsubscribePTZCommands(cameraID string, ch <-chan *PTZCommandEvent) {
+	r.ptzSubscribersMu.Lock()
+	defer r.ptzSubscribersMu.Unlock()
+
+	subscribers := r.ptzSubscribers[cameraID]
+	for i, subscriber := range subscribers {
+		if subscriber == ch {
+			r.ptzSubscribers[cameraID] = append(subscribers[:i], subscribers[i+1:]...)
+			close(subscriber)
+			break
+		}
+	}
+
+	if len(r.ptzSubscribers[cameraID]) == 0 {
+		delete(r.ptzSubscribers, cameraID)
+	}
+}
+
+func (r *FDRepo) publishPTZCommand(cameraID string, event *PTZCommandEvent) {
+	r.ptzSubscribersMu.RLock()
+	defer r.ptzSubscribersMu.RUnlock()
+
+	subscribers := r.ptzSubscribers[cameraID]
+	for _, ch := range subscribers {
+		select {
+		case ch <- event:
+		default:
+		}
 	}
 }
 

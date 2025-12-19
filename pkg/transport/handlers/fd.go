@@ -3,10 +3,12 @@ package handlers
 import (
 	"context"
 	"errors"
+	"fmt"
 	"time"
 
 	"connectrpc.com/connect"
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
+	"github.com/anyfld/vistra-operation-control-room/pkg/transport/infrastructure"
 	"github.com/anyfld/vistra-operation-control-room/pkg/transport/usecase"
 )
 
@@ -208,33 +210,109 @@ func (h *FDHandler) SendControlCommand(
 
 func (h *FDHandler) StreamControlCommands(
 	ctx context.Context,
-	req *connect.Request[protov1.StreamControlCommandsRequest],
-	stream *connect.ServerStream[protov1.StreamControlCommandsResponse],
+	stream *connect.BidiStream[protov1.StreamControlCommandsRequest, protov1.StreamControlCommandsResponse],
 ) error {
-	cameraID := req.Msg.GetCameraId()
+	var cameraID string
+	var commandCh <-chan *infrastructure.PTZCommandEvent
 
-	for range 5 {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
+	for stream.Receive() {
+		req := stream.Msg()
+		if req == nil {
+			continue
 		}
 
-		command, err := h.uc.GetControlCommand(ctx, cameraID)
-		if err != nil {
-			return err
-		}
+		if init := req.GetInit(); init != nil {
+			cameraID = init.GetCameraId()
+			if cameraID == "" {
+				return connect.NewError(
+					connect.CodeInvalidArgument,
+					errors.New("camera_id is required"),
+				)
+			}
 
-		if command != nil {
+			var err error
+			commandCh, err = h.uc.SubscribePTZCommands(ctx, cameraID)
+			if err != nil {
+				return err
+			}
+
 			if err := stream.Send(&protov1.StreamControlCommandsResponse{
-				Command:     command,
+				Message: &protov1.StreamControlCommandsResponse_Status{
+					Status: &protov1.StreamControlCommandsStatus{
+						Connected: true,
+						Message:   fmt.Sprintf("Subscribed to PTZ commands for camera: %s", cameraID),
+					},
+				},
 				TimestampMs: time.Now().UnixMilli(),
 			}); err != nil {
+				h.uc.UnsubscribePTZCommands(ctx, cameraID, commandCh)
+				return err
+			}
+
+			go func() {
+				defer func() {
+					if commandCh != nil {
+						h.uc.UnsubscribePTZCommands(ctx, cameraID, commandCh)
+					}
+				}()
+
+				for {
+					select {
+					case <-ctx.Done():
+						return
+					case event, ok := <-commandCh:
+						if !ok {
+							return
+						}
+
+						response := &protov1.StreamControlCommandsResponse{
+							TimestampMs: event.TimestampMs,
+						}
+
+						if event.Command != nil {
+							response.Message = &protov1.StreamControlCommandsResponse_Command{
+								Command: event.Command,
+							}
+						} else if event.Result != nil {
+							response.Message = &protov1.StreamControlCommandsResponse_Result{
+								Result: event.Result,
+							}
+						}
+
+						if response.Message != nil {
+							if err := stream.Send(response); err != nil {
+								return
+							}
+						}
+					}
+				}
+			}()
+		} else if req.GetCommand() != nil {
+			result, err := h.uc.SendControlCommand(ctx, req.GetCommand())
+			if err != nil {
+				return err
+			}
+			if result != nil {
+				if err := stream.Send(&protov1.StreamControlCommandsResponse{
+					Message: &protov1.StreamControlCommandsResponse_Result{
+						Result: result,
+					},
+					TimestampMs: time.Now().UnixMilli(),
+				}); err != nil {
+					return err
+				}
+			}
+		} else if req.GetResult() != nil {
+		} else if req.GetState() != nil {
+			_, err := h.uc.ReportCameraState(ctx, req.GetState())
+			if err != nil {
 				return err
 			}
 		}
+	}
 
-		time.Sleep(fdPollingIntervalMs * time.Millisecond)
+	if commandCh != nil {
+		h.uc.UnsubscribePTZCommands(ctx, cameraID, commandCh)
 	}
 
 	return nil
