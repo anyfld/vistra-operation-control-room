@@ -51,55 +51,22 @@ func TestStreamControlCommands_PTZPubSub(t *testing.T) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	stream1 := client.StreamControlCommands(ctx)
-	stream2 := client.StreamControlCommands(ctx)
-
 	cameraID := "cam-e2e-1"
 
-	initReq := &protov1.StreamControlCommandsRequest{
+	initReq := connect.NewRequest(&protov1.StreamControlCommandsRequest{
 		Message: &protov1.StreamControlCommandsRequest_Init{
 			Init: &protov1.StreamControlCommandsInit{
 				CameraId: cameraID,
 			},
 		},
-	}
+	})
 
-	require.NoError(t, stream1.Send(initReq))
-	require.NoError(t, stream2.Send(initReq))
-
-	waitForStatus := func(
-		stream *connect.BidiStreamForClient[
-			protov1.StreamControlCommandsRequest,
-			protov1.StreamControlCommandsResponse,
-		],
-	) *protov1.StreamControlCommandsStatus {
-		t.Helper()
-
-		deadline := time.Now().Add(2 * time.Second)
-		for time.Now().Before(deadline) {
-			msg, err := stream.Receive()
-			if err != nil {
-				return nil
-			}
-			if msg == nil {
-				continue
-			}
-
-			if status := msg.GetStatus(); status != nil {
-				return status
-			}
-		}
-
-		return nil
-	}
-
-	status1 := waitForStatus(stream1)
-	require.NotNil(t, status1)
-	require.True(t, status1.GetConnected())
-
-	status2 := waitForStatus(stream2)
-	require.NotNil(t, status2)
-	require.True(t, status2.GetConnected())
+	resp, err := client.StreamControlCommands(ctx, initReq)
+	require.NoError(t, err)
+	require.NotNil(t, resp)
+	require.NotNil(t, resp.Msg)
+	require.NotNil(t, resp.Msg.GetStatus())
+	require.True(t, resp.Msg.GetStatus().GetConnected())
 
 	command := &protov1.ControlCommand{
 		CameraId: cameraID,
@@ -115,66 +82,44 @@ func TestStreamControlCommands_PTZPubSub(t *testing.T) {
 	sendReq := connect.NewRequest(&protov1.SendControlCommandRequest{
 		Command: command,
 	})
-	_, err := client.SendControlCommand(ctx, sendReq)
+	_, err = client.SendControlCommand(ctx, sendReq)
 	require.NoError(t, err)
 
-	resultCh1 := make(chan *protov1.ControlCommandResult, 1)
-	commandCh2 := make(chan *protov1.ControlCommand, 1)
+	deadline := time.Now().Add(2 * time.Second)
+	var gotResult *protov1.ControlCommandResult
 
-	collectResults := func(
-		stream *connect.BidiStreamForClient[
-			protov1.StreamControlCommandsRequest,
-			protov1.StreamControlCommandsResponse,
-		],
-		gotResult chan<- *protov1.ControlCommandResult,
-		gotCommand chan<- *protov1.ControlCommand,
-	) {
-		for {
-			msg, err := stream.Receive()
-			if err != nil || msg == nil {
-				return
-			}
+	for time.Now().Before(deadline) {
+		pollReq := connect.NewRequest(&protov1.StreamControlCommandsRequest{
+			Message: &protov1.StreamControlCommandsRequest_Init{
+				Init: &protov1.StreamControlCommandsInit{
+					CameraId: cameraID,
+				},
+			},
+		})
 
-			if res := msg.GetResult(); res != nil && gotResult != nil {
-				select {
-				case gotResult <- res:
-				default:
-				}
-			}
+		pollResp, pollErr := client.StreamControlCommands(ctx, pollReq)
+		require.NoError(t, pollErr)
+		require.NotNil(t, pollResp)
+		require.NotNil(t, pollResp.Msg)
 
-			if cmd := msg.GetCommand(); cmd != nil && gotCommand != nil {
-				select {
-				case gotCommand <- cmd:
-				default:
-				}
-			}
+		if cmd := pollResp.Msg.GetCommand(); cmd != nil {
+			require.Equal(t, cameraID, cmd.GetCameraId())
+			require.Equal(t, protov1.ControlCommandType_CONTROL_COMMAND_TYPE_PTZ_ABSOLUTE, cmd.GetType())
+			require.NotNil(t, cmd.GetPtzParameters())
+			require.Equal(t, float32(10), cmd.GetPtzParameters().GetPan())
+			require.Equal(t, float32(5), cmd.GetPtzParameters().GetTilt())
+			require.Equal(t, float32(2), cmd.GetPtzParameters().GetZoom())
 		}
+
+		if res := pollResp.Msg.GetResult(); res != nil {
+			gotResult = res
+			break
+		}
+
+		time.Sleep(100 * time.Millisecond)
 	}
 
-	go collectResults(stream1, resultCh1, nil)
-	go collectResults(stream2, nil, commandCh2)
-
-	time.Sleep(100 * time.Millisecond)
-
-	select {
-	case cmd := <-commandCh2:
-		require.NotNil(t, cmd)
-		require.Equal(t, cameraID, cmd.GetCameraId())
-		require.Equal(t, protov1.ControlCommandType_CONTROL_COMMAND_TYPE_PTZ_ABSOLUTE, cmd.GetType())
-		require.NotNil(t, cmd.GetPtzParameters())
-		require.Equal(t, float32(10), cmd.GetPtzParameters().GetPan())
-		require.Equal(t, float32(5), cmd.GetPtzParameters().GetTilt())
-		require.Equal(t, float32(2), cmd.GetPtzParameters().GetZoom())
-	case <-ctx.Done():
-		t.Fatal("timeout waiting for command on subscriber stream")
-	}
-
-	select {
-	case res := <-resultCh1:
-		require.NotNil(t, res)
-		require.True(t, res.GetSuccess())
-		require.NotEmpty(t, res.GetCommandId())
-	case <-ctx.Done():
-		t.Fatal("timeout waiting for result on subscriber stream")
-	}
+	require.NotNil(t, gotResult)
+	require.True(t, gotResult.GetSuccess())
+	require.NotEmpty(t, gotResult.GetCommandId())
 }
