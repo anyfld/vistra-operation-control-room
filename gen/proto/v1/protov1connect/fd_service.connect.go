@@ -81,7 +81,7 @@ type FDServiceClient interface {
 	CalculateFraming(context.Context, *connect.Request[v1.CalculateFramingRequest]) (*connect.Response[v1.CalculateFramingResponse], error)
 	// CO への制御コマンド
 	SendControlCommand(context.Context, *connect.Request[v1.SendControlCommandRequest]) (*connect.Response[v1.SendControlCommandResponse], error)
-	StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest]) (*connect.ServerStreamForClient[v1.StreamControlCommandsResponse], error)
+	StreamControlCommands(context.Context) *connect.BidiStreamForClient[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse]
 	// カメラ状態の報告
 	ReportCameraState(context.Context, *connect.Request[v1.ReportCameraStateRequest]) (*connect.Response[v1.ReportCameraStateResponse], error)
 	GetCameraState(context.Context, *connect.Request[v1.GetCameraStateRequest]) (*connect.Response[v1.GetCameraStateResponse], error)
@@ -223,8 +223,8 @@ func (c *fDServiceClient) SendControlCommand(ctx context.Context, req *connect.R
 }
 
 // StreamControlCommands calls v1.FDService.StreamControlCommands.
-func (c *fDServiceClient) StreamControlCommands(ctx context.Context, req *connect.Request[v1.StreamControlCommandsRequest]) (*connect.ServerStreamForClient[v1.StreamControlCommandsResponse], error) {
-	return c.streamControlCommands.CallServerStream(ctx, req)
+func (c *fDServiceClient) StreamControlCommands(ctx context.Context) *connect.BidiStreamForClient[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse] {
+	return c.streamControlCommands.CallBidiStream(ctx)
 }
 
 // ReportCameraState calls v1.FDService.ReportCameraState.
@@ -251,7 +251,7 @@ type FDServiceHandler interface {
 	CalculateFraming(context.Context, *connect.Request[v1.CalculateFramingRequest]) (*connect.Response[v1.CalculateFramingResponse], error)
 	// CO への制御コマンド
 	SendControlCommand(context.Context, *connect.Request[v1.SendControlCommandRequest]) (*connect.Response[v1.SendControlCommandResponse], error)
-	StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest], *connect.ServerStream[v1.StreamControlCommandsResponse]) error
+	StreamControlCommands(context.Context, *connect.BidiStream[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse]) error
 	// カメラ状態の報告
 	ReportCameraState(context.Context, *connect.Request[v1.ReportCameraStateRequest]) (*connect.Response[v1.ReportCameraStateResponse], error)
 	GetCameraState(context.Context, *connect.Request[v1.GetCameraStateRequest]) (*connect.Response[v1.GetCameraStateResponse], error)
@@ -312,7 +312,7 @@ func NewFDServiceHandler(svc FDServiceHandler, opts ...connect.HandlerOption) (s
 		connect.WithSchema(fDServiceMethods.ByName("SendControlCommand")),
 		connect.WithHandlerOptions(opts...),
 	)
-	fDServiceStreamControlCommandsHandler := connect.NewServerStreamHandler(
+	fDServiceStreamControlCommandsHandler := connect.NewBidiStreamHandler(
 		FDServiceStreamControlCommandsProcedure,
 		svc.StreamControlCommands,
 		connect.WithSchema(fDServiceMethods.ByName("StreamControlCommands")),
@@ -395,7 +395,7 @@ func (UnimplementedFDServiceHandler) SendControlCommand(context.Context, *connec
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.SendControlCommand is not implemented"))
 }
 
-func (UnimplementedFDServiceHandler) StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest], *connect.ServerStream[v1.StreamControlCommandsResponse]) error {
+func (UnimplementedFDServiceHandler) StreamControlCommands(context.Context, *connect.BidiStream[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.StreamControlCommands is not implemented"))
 }
 
