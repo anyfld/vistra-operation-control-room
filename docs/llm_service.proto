@@ -1,0 +1,39 @@
+syntax = "proto3";
+
+package v1;
+
+option go_package = "github.com/anyfld/vistra-operation-control-room/gen/proto/v1;protov1";
+
+// LLMService はLLMとのチャット機能を提供します。
+service LLMService {
+  // Chat はLLMとのチャットメッセージを送信し、レスポンスを取得します。
+  rpc Chat(ChatRequest) returns (ChatResponse) {}
+}
+
+// ============================================================
+// チャット関連メッセージ
+// ============================================================
+
+// ChatRequest はチャットリクエストです。
+message ChatRequest {
+  // ユーザーのメッセージ
+  string message = 1;
+  // システムプロンプト（オプション）
+  optional string system_prompt = 2;
+  // 会話履歴（オプション）
+  repeated ChatMessage history = 3;
+}
+
+// ChatMessage は会話履歴の1メッセージを表します。
+message ChatMessage {
+  // ロール（user または assistant）
+  string role = 1;
+  // メッセージ内容
+  string content = 2;
+}
+
+// ChatResponse はチャットレスポンスです。
+message ChatResponse {
+  // LLMからのレスポンスメッセージ
+  string message = 1;
+}

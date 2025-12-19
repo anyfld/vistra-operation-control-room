@@ -17,6 +17,7 @@ import (
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
 	"github.com/anyfld/vistra-operation-control-room/gen/proto/v1/protov1connect"
 	"github.com/anyfld/vistra-operation-control-room/internal/middleware"
+	llmInteractor "github.com/anyfld/vistra-operation-control-room/pkg/llm/usecase/interactor"
 	handlers "github.com/anyfld/vistra-operation-control-room/pkg/transport/handlers"
 	"github.com/anyfld/vistra-operation-control-room/pkg/transport/infrastructure"
 	"github.com/anyfld/vistra-operation-control-room/pkg/transport/usecase"
@@ -65,6 +66,7 @@ func setupHandlers(cameraRepo *infrastructure.CameraRepo) *http.ServeMux {
 	registerCRService(mux)
 	registerFDService(mux, cameraRepo)
 	registerPTZService(mux)
+	registerLLMService(mux)
 
 	return mux
 }
@@ -107,6 +109,25 @@ func registerPTZService(mux *http.ServeMux) {
 
 	ptzUC := usecase.NewPTZUsecase(ptzRepo)
 	if path, h := protov1connect.NewPTZServiceHandler(handlers.NewPTZHandler(ptzUC)); path != "" {
+		mux.Handle(path, h)
+	}
+}
+
+func registerLLMService(mux *http.ServeMux) {
+	ctx := context.Background()
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+
+	llmRepo, err := infrastructure.NewLLMRepo(ctx, logger)
+	if err != nil {
+		log.Printf("Failed to create LLM repo: %v", err)
+
+		return
+	}
+
+	llmUC := usecase.NewLLMUsecase(
+		llmInteractor.NewLLMInteractor(llmRepo.GetGeminiRepository()),
+	)
+	if path, h := protov1connect.NewLLMServiceHandler(handlers.NewLLMHandler(llmUC)); path != "" {
 		mux.Handle(path, h)
 	}
 }
