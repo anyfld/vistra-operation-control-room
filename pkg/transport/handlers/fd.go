@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
 	"time"
 
 	"connectrpc.com/connect"
@@ -209,11 +210,20 @@ func (h *FDHandler) StreamControlCommands(
 	if init := message.GetInit(); init != nil {
 		cameraID := init.GetCameraId()
 		if cameraID == "" {
+			log.Printf(
+				"fd stream control commands init failed: missing camera_id",
+			)
+
 			return nil, connect.NewError(
 				connect.CodeInvalidArgument,
 				errors.New("camera_id is required"),
 			)
 		}
+
+		log.Printf(
+			"fd stream control commands init: camera_id=%s",
+			cameraID,
+		)
 
 		commandCh, err := h.uc.SubscribePTZCommands(ctx, cameraID)
 		if err != nil {
@@ -278,6 +288,12 @@ func (h *FDHandler) StreamControlCommands(
 	}
 
 	if command := message.GetCommand(); command != nil {
+		log.Printf(
+			"fd stream control commands command: camera_id=%s command_id=%s",
+			command.GetCameraId(),
+			command.GetCommandId(),
+		)
+
 		result, err := h.uc.SendControlCommand(ctx, command)
 		if err != nil {
 			return nil, err
@@ -295,6 +311,8 @@ func (h *FDHandler) StreamControlCommands(
 	}
 
 	if message.GetResult() != nil {
+		log.Printf("fd stream control commands result received")
+
 		return connect.NewResponse(&protov1.StreamControlCommandsResponse{
 			Message: &protov1.StreamControlCommandsResponse_Status{
 				Status: &protov1.StreamControlCommandsStatus{
@@ -307,6 +325,11 @@ func (h *FDHandler) StreamControlCommands(
 	}
 
 	if state := message.GetState(); state != nil {
+		log.Printf(
+			"fd stream control commands state: camera_id=%s",
+			state.GetCameraId(),
+		)
+
 		_, err := h.uc.ReportCameraState(ctx, state)
 		if err != nil {
 			return nil, err
@@ -321,6 +344,11 @@ func (h *FDHandler) StreamControlCommands(
 			)
 			if err != nil {
 				if errors.Is(err, usecase.ErrCameraNotFound) {
+					log.Printf(
+						"fd stream control commands state failed: camera not found: camera_id=%s",
+						state.GetCameraId(),
+					)
+
 					return nil, connect.NewError(
 						connect.CodeNotFound,
 						err,
@@ -331,6 +359,11 @@ func (h *FDHandler) StreamControlCommands(
 			}
 
 			if !success {
+				log.Printf(
+					"fd stream control commands state failed: camera not found: camera_id=%s",
+					state.GetCameraId(),
+				)
+
 				return nil, connect.NewError(
 					connect.CodeNotFound,
 					errors.New("camera not found"),

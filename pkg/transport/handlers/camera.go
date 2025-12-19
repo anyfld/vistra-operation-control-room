@@ -3,6 +3,7 @@ package handlers
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"connectrpc.com/connect"
@@ -38,6 +39,12 @@ func (h *CameraHandler) RegisterCamera(
 		)
 	}
 
+	log.Printf(
+		"camera registered: camera_id=%s master_mf_id=%s",
+		camera.GetId(),
+		camera.GetMasterMfId(),
+	)
+
 	return connect.NewResponse(&protov1.RegisterCameraResponse{Camera: camera}), nil
 }
 
@@ -60,6 +67,11 @@ func (h *CameraHandler) UpdateCamera(
 	camera, err := h.uc.UpdateCamera(ctx, req.Msg)
 	if err != nil {
 		if errors.Is(err, usecase.ErrCameraNotFound) {
+			log.Printf(
+				"camera update failed: camera not found: camera_id=%s",
+				req.Msg.GetCameraId(),
+			)
+
 			return nil, connect.NewError(
 				connect.CodeNotFound,
 				err,
@@ -89,6 +101,11 @@ func (h *CameraHandler) GetCamera(
 	}
 
 	if camera == nil {
+		log.Printf(
+			"get camera failed: camera not found: camera_id=%s",
+			req.Msg.GetCameraId(),
+		)
+
 		return nil, connect.NewError(
 			connect.CodeNotFound,
 			errors.New("camera not found"),
@@ -143,6 +160,11 @@ func (h *CameraHandler) SwitchCameraMode(
 	}
 
 	if !success {
+		log.Printf(
+			"switch camera mode failed: camera not found: camera_id=%s",
+			req.Msg.GetCameraId(),
+		)
+
 		return connect.NewResponse(&protov1.SwitchCameraModeResponse{
 			Success:      false,
 			Camera:       camera,
