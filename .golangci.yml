@@ -26,3 +26,5 @@ linters:
     varnamelen:
       ignore-decls:
         - i int
+    interfacebloat:
+      max: 11
