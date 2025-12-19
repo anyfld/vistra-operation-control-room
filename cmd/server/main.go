@@ -45,7 +45,9 @@ func main() {
 	mux := http.NewServeMux()
 	mux.Handle(path, httpHandler)
 
-	if path, h := protov1connect.NewMDServiceHandler(&handlers.MDHandler{}); path != "" {
+	mdRepo := infrastructure.NewMDRepo()
+	mdUC := usecase.NewMDUsecase(mdRepo)
+	if path, h := protov1connect.NewMDServiceHandler(handlers.NewMDHandler(mdUC)); path != "" {
 		mux.Handle(path, h)
 	}
 
