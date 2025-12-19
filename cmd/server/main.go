@@ -101,7 +101,6 @@ func startCameraHeartbeatChecker(cameraUC usecase.CameraInteractor) {
 		}
 	}()
 }
-
 func registerCRService(mux *http.ServeMux) {
 	uc := usecase.New(infrastructure.NewInMemoryRepo())
 	if path, h := protov1connect.NewCRServiceHandler(handlers.NewCRHandler(uc)); path != "" {
