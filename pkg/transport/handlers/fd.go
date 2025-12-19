@@ -215,8 +215,11 @@ func (h *FDHandler) StreamControlCommands(
 	var cameraID string
 	var commandCh <-chan *infrastructure.PTZCommandEvent
 
-	for stream.Receive() {
-		req := stream.Msg()
+	for {
+		req, err := stream.Receive()
+		if err != nil {
+			break
+		}
 		if req == nil {
 			continue
 		}
@@ -265,22 +268,24 @@ func (h *FDHandler) StreamControlCommands(
 							return
 						}
 
-						response := &protov1.StreamControlCommandsResponse{
-							TimestampMs: event.TimestampMs,
-						}
-
 						if event.Command != nil {
-							response.Message = &protov1.StreamControlCommandsResponse_Command{
-								Command: event.Command,
-							}
-						} else if event.Result != nil {
-							response.Message = &protov1.StreamControlCommandsResponse_Result{
-								Result: event.Result,
+							if err := stream.Send(&protov1.StreamControlCommandsResponse{
+								Message: &protov1.StreamControlCommandsResponse_Command{
+									Command: event.Command,
+								},
+								TimestampMs: event.TimestampMs,
+							}); err != nil {
+								return
 							}
 						}
 
-						if response.Message != nil {
-							if err := stream.Send(response); err != nil {
+						if event.Result != nil {
+							if err := stream.Send(&protov1.StreamControlCommandsResponse{
+								Message: &protov1.StreamControlCommandsResponse_Result{
+									Result: event.Result,
+								},
+								TimestampMs: event.TimestampMs,
+							}); err != nil {
 								return
 							}
 						}
