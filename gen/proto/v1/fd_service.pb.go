@@ -1471,13 +1471,13 @@ func (x *StreamControlCommandsInit) GetCameraId() string {
 
 type StreamControlCommandsResponse struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
-	// Types that are valid to be assigned to Message:
-	//
-	//	*StreamControlCommandsResponse_Command
-	//	*StreamControlCommandsResponse_Result
-	//	*StreamControlCommandsResponse_Status
-	Message       isStreamControlCommandsResponse_Message `protobuf_oneof:"message"`
-	TimestampMs   int64                                   `protobuf:"varint,4,opt,name=timestamp_ms,json=timestampMs,proto3" json:"timestamp_ms,omitempty"`
+	// コマンドの配信（サーバー→クライアント）
+	Command *ControlCommand `protobuf:"bytes,1,opt,name=command,proto3" json:"command,omitempty"`
+	// コマンド実行結果の返却（サーバー→クライアント）
+	Result *ControlCommandResult `protobuf:"bytes,2,opt,name=result,proto3" json:"result,omitempty"`
+	// ポーリングチャネル状態の通知
+	Status        *StreamControlCommandsStatus `protobuf:"bytes,3,opt,name=status,proto3" json:"status,omitempty"`
+	TimestampMs   int64                        `protobuf:"varint,4,opt,name=timestamp_ms,json=timestampMs,proto3" json:"timestamp_ms,omitempty"`
 	unknownFields protoimpl.UnknownFields
 	sizeCache     protoimpl.SizeCache
 }
@@ -1512,36 +1512,23 @@ func (*StreamControlCommandsResponse) Descriptor() ([]byte, []int) {
 	return file_v1_fd_service_proto_rawDescGZIP(), []int{21}
 }
 
-func (x *StreamControlCommandsResponse) GetMessage() isStreamControlCommandsResponse_Message {
-	if x != nil {
-		return x.Message
-	}
-	return nil
-}
-
 func (x *StreamControlCommandsResponse) GetCommand() *ControlCommand {
 	if x != nil {
-		if x, ok := x.Message.(*StreamControlCommandsResponse_Command); ok {
-			return x.Command
-		}
+		return x.Command
 	}
 	return nil
 }
 
 func (x *StreamControlCommandsResponse) GetResult() *ControlCommandResult {
 	if x != nil {
-		if x, ok := x.Message.(*StreamControlCommandsResponse_Result); ok {
-			return x.Result
-		}
+		return x.Result
 	}
 	return nil
 }
 
 func (x *StreamControlCommandsResponse) GetStatus() *StreamControlCommandsStatus {
 	if x != nil {
-		if x, ok := x.Message.(*StreamControlCommandsResponse_Status); ok {
-			return x.Status
-		}
+		return x.Status
 	}
 	return nil
 }
@@ -1552,31 +1539,6 @@ func (x *StreamControlCommandsResponse) GetTimestampMs() int64 {
 	}
 	return 0
 }
-
-type isStreamControlCommandsResponse_Message interface {
-	isStreamControlCommandsResponse_Message()
-}
-
-type StreamControlCommandsResponse_Command struct {
-	// コマンドの配信（サーバー→クライアント）
-	Command *ControlCommand `protobuf:"bytes,1,opt,name=command,proto3,oneof"`
-}
-
-type StreamControlCommandsResponse_Result struct {
-	// コマンド実行結果の返却（サーバー→クライアント）
-	Result *ControlCommandResult `protobuf:"bytes,2,opt,name=result,proto3,oneof"`
-}
-
-type StreamControlCommandsResponse_Status struct {
-	// ポーリングチャネル状態の通知
-	Status *StreamControlCommandsStatus `protobuf:"bytes,3,opt,name=status,proto3,oneof"`
-}
-
-func (*StreamControlCommandsResponse_Command) isStreamControlCommandsResponse_Message() {}
-
-func (*StreamControlCommandsResponse_Result) isStreamControlCommandsResponse_Message() {}
-
-func (*StreamControlCommandsResponse_Status) isStreamControlCommandsResponse_Message() {}
 
 type StreamControlCommandsStatus struct {
 	state         protoimpl.MessageState `protogen:"open.v1"`
@@ -1835,13 +1797,12 @@ const file_v1_fd_service_proto_rawDesc = "" +
 	"\x05state\x18\x04 \x01(\v2\x0f.v1.CameraStateH\x00R\x05stateB\t\n" +
 	"\amessage\"8\n" +
 	"\x19StreamControlCommandsInit\x12\x1b\n" +
-	"\tcamera_id\x18\x01 \x01(\tR\bcameraId\"\xec\x01\n" +
-	"\x1dStreamControlCommandsResponse\x12.\n" +
-	"\acommand\x18\x01 \x01(\v2\x12.v1.ControlCommandH\x00R\acommand\x122\n" +
-	"\x06result\x18\x02 \x01(\v2\x18.v1.ControlCommandResultH\x00R\x06result\x129\n" +
-	"\x06status\x18\x03 \x01(\v2\x1f.v1.StreamControlCommandsStatusH\x00R\x06status\x12!\n" +
-	"\ftimestamp_ms\x18\x04 \x01(\x03R\vtimestampMsB\t\n" +
-	"\amessage\"U\n" +
+	"\tcamera_id\x18\x01 \x01(\tR\bcameraId\"\xdb\x01\n" +
+	"\x1dStreamControlCommandsResponse\x12,\n" +
+	"\acommand\x18\x01 \x01(\v2\x12.v1.ControlCommandR\acommand\x120\n" +
+	"\x06result\x18\x02 \x01(\v2\x18.v1.ControlCommandResultR\x06result\x127\n" +
+	"\x06status\x18\x03 \x01(\v2\x1f.v1.StreamControlCommandsStatusR\x06status\x12!\n" +
+	"\ftimestamp_ms\x18\x04 \x01(\x03R\vtimestampMs\"U\n" +
 	"\x1bStreamControlCommandsStatus\x12\x1c\n" +
 	"\tconnected\x18\x01 \x01(\bR\tconnected\x12\x18\n" +
 	"\amessage\x18\x02 \x01(\tR\amessage\"\xb0\x02\n" +
@@ -1995,11 +1956,6 @@ func file_v1_fd_service_proto_init() {
 		(*StreamControlCommandsRequest_Command)(nil),
 		(*StreamControlCommandsRequest_Result)(nil),
 		(*StreamControlCommandsRequest_State)(nil),
-	}
-	file_v1_fd_service_proto_msgTypes[21].OneofWrappers = []any{
-		(*StreamControlCommandsResponse_Command)(nil),
-		(*StreamControlCommandsResponse_Result)(nil),
-		(*StreamControlCommandsResponse_Status)(nil),
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
