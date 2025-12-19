@@ -3,21 +3,33 @@ package handlers
 import (
 	"context"
 	"errors"
+	"time"
 
 	"connectrpc.com/connect"
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
+	"github.com/anyfld/vistra-operation-control-room/pkg/transport/usecase"
 )
 
-type FDHandler struct{}
+type FDHandler struct {
+	uc usecase.FDInteractor
+}
+
+func NewFDHandler(uc usecase.FDInteractor) *FDHandler {
+	return &FDHandler{uc: uc}
+}
 
 func (h *FDHandler) ExecuteCinematography(
 	ctx context.Context,
 	req *connect.Request[protov1.ExecuteCinematographyRequest],
 ) (*connect.Response[protov1.ExecuteCinematographyResponse], error) {
-	return nil, connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.ExecuteCinematography is not implemented"),
-	)
+	result, err := h.uc.ExecuteCinematography(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return connect.NewResponse(&protov1.ExecuteCinematographyResponse{
+		Result: result,
+	}), nil
 }
 
 func (h *FDHandler) StreamCinematographyInstructions(
@@ -25,40 +37,78 @@ func (h *FDHandler) StreamCinematographyInstructions(
 	req *connect.Request[protov1.FDServiceStreamCinematographyInstructionsRequest],
 	stream *connect.ServerStream[protov1.FDServiceStreamCinematographyInstructionsResponse],
 ) error {
-	return connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.StreamCinematographyInstructions is not implemented"),
-	)
+	sourceFilter := req.Msg.GetSourceFilter()
+
+	for range 5 {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		instruction, err := h.uc.GetCinematographyInstruction(ctx, sourceFilter)
+		if err != nil {
+			return err
+		}
+
+		if instruction != nil {
+			if err := stream.Send(&protov1.FDServiceStreamCinematographyInstructionsResponse{
+				Instruction: instruction,
+				Source:      "md",
+				TimestampMs: time.Now().UnixMilli(),
+			}); err != nil {
+				return err
+			}
+		}
+
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	return nil
 }
 
 func (h *FDHandler) ProcessImage(
 	ctx context.Context,
 	req *connect.Request[protov1.ProcessImageRequest],
 ) (*connect.Response[protov1.ProcessImageResponse], error) {
-	return nil, connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.ProcessImage is not implemented"),
-	)
+	detected, processingTime, err := h.uc.ProcessImage(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return connect.NewResponse(&protov1.ProcessImageResponse{
+		DetectedSubjects: detected,
+		ProcessingTimeMs: processingTime,
+	}), nil
 }
 
 func (h *FDHandler) StartPatternMatching(
 	ctx context.Context,
 	req *connect.Request[protov1.StartPatternMatchingRequest],
 ) (*connect.Response[protov1.StartPatternMatchingResponse], error) {
-	return nil, connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.StartPatternMatching is not implemented"),
-	)
+	sessionID, err := h.uc.StartPatternMatching(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return connect.NewResponse(&protov1.StartPatternMatchingResponse{
+		Success:   true,
+		SessionId: sessionID,
+	}), nil
 }
 
 func (h *FDHandler) StopPatternMatching(
 	ctx context.Context,
 	req *connect.Request[protov1.StopPatternMatchingRequest],
 ) (*connect.Response[protov1.StopPatternMatchingResponse], error) {
-	return nil, connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.StopPatternMatching is not implemented"),
-	)
+	success, err := h.uc.StopPatternMatching(ctx, req.Msg.GetSessionId())
+	if err != nil {
+		return nil, err
+	}
+
+	return connect.NewResponse(&protov1.StopPatternMatchingResponse{
+		Success: success,
+	}), nil
 }
 
 func (h *FDHandler) StreamPatternMatchResults(
@@ -66,30 +116,85 @@ func (h *FDHandler) StreamPatternMatchResults(
 	req *connect.Request[protov1.StreamPatternMatchResultsRequest],
 	stream *connect.ServerStream[protov1.StreamPatternMatchResultsResponse],
 ) error {
-	return connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.StreamPatternMatchResults is not implemented"),
-	)
+	sessionID := req.Msg.GetSessionId()
+
+	sessID, cameraID, targetSubjects, intervalMs, err := h.uc.GetPatternMatchingSession(ctx, sessionID)
+	if err != nil {
+		return err
+	}
+
+	if sessID == "" {
+		return connect.NewError(
+			connect.CodeNotFound,
+			errors.New("pattern matching session not found"),
+		)
+	}
+
+	for range 5 {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		detected := []*protov1.DetectedSubject{}
+		for _, subject := range targetSubjects {
+			detected = append(detected, &protov1.DetectedSubject{
+				Subject: subject,
+				Confidence: 0.85,
+				DetectedBox: &protov1.BoundingBox{
+					X:      0.2,
+					Y:      0.2,
+					Width:  0.3,
+					Height: 0.3,
+				},
+			})
+		}
+
+		if err := stream.Send(&protov1.StreamPatternMatchResultsResponse{
+			SessionId:        sessionID,
+			CameraId:         cameraID,
+			DetectedSubjects: detected,
+			TimestampMs:      time.Now().UnixMilli(),
+		}); err != nil {
+			return err
+		}
+
+		time.Sleep(time.Duration(intervalMs) * time.Millisecond)
+	}
+
+	return nil
 }
 
 func (h *FDHandler) CalculateFraming(
 	ctx context.Context,
 	req *connect.Request[protov1.CalculateFramingRequest],
 ) (*connect.Response[protov1.CalculateFramingResponse], error) {
-	return nil, connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.CalculateFraming is not implemented"),
-	)
+	ptz, timeMs, success, errMsg, err := h.uc.CalculateFraming(ctx, req.Msg)
+	if err != nil {
+		return nil, err
+	}
+
+	return connect.NewResponse(&protov1.CalculateFramingResponse{
+		CalculatedPtz:      ptz,
+		EstimatedMoveTimeMs: timeMs,
+		Success:            success,
+		ErrorMessage:       errMsg,
+	}), nil
 }
 
 func (h *FDHandler) SendControlCommand(
 	ctx context.Context,
 	req *connect.Request[protov1.SendControlCommandRequest],
 ) (*connect.Response[protov1.SendControlCommandResponse], error) {
-	return nil, connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.SendControlCommand is not implemented"),
-	)
+	result, err := h.uc.SendControlCommand(ctx, req.Msg.GetCommand())
+	if err != nil {
+		return nil, err
+	}
+
+	return connect.NewResponse(&protov1.SendControlCommandResponse{
+		Result: result,
+	}), nil
 }
 
 func (h *FDHandler) StreamControlCommands(
@@ -97,28 +202,66 @@ func (h *FDHandler) StreamControlCommands(
 	req *connect.Request[protov1.StreamControlCommandsRequest],
 	stream *connect.ServerStream[protov1.StreamControlCommandsResponse],
 ) error {
-	return connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.StreamControlCommands is not implemented"),
-	)
+	cameraID := req.Msg.GetCameraId()
+
+	for range 5 {
+		select {
+		case <-ctx.Done():
+			return ctx.Err()
+		default:
+		}
+
+		command, err := h.uc.GetControlCommand(ctx, cameraID)
+		if err != nil {
+			return err
+		}
+
+		if command != nil {
+			if err := stream.Send(&protov1.StreamControlCommandsResponse{
+				Command:     command,
+				TimestampMs: time.Now().UnixMilli(),
+			}); err != nil {
+				return err
+			}
+		}
+
+		time.Sleep(500 * time.Millisecond)
+	}
+
+	return nil
 }
 
 func (h *FDHandler) ReportCameraState(
 	ctx context.Context,
 	req *connect.Request[protov1.ReportCameraStateRequest],
 ) (*connect.Response[protov1.ReportCameraStateResponse], error) {
-	return nil, connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.ReportCameraState is not implemented"),
-	)
+	acknowledged, err := h.uc.ReportCameraState(ctx, req.Msg.GetState())
+	if err != nil {
+		return nil, err
+	}
+
+	return connect.NewResponse(&protov1.ReportCameraStateResponse{
+		Acknowledged: acknowledged,
+	}), nil
 }
 
 func (h *FDHandler) GetCameraState(
 	ctx context.Context,
 	req *connect.Request[protov1.GetCameraStateRequest],
 ) (*connect.Response[protov1.GetCameraStateResponse], error) {
-	return nil, connect.NewError(
-		connect.CodeUnimplemented,
-		errors.New("v1.FDService.GetCameraState is not implemented"),
-	)
+	state, err := h.uc.GetCameraState(ctx, req.Msg.GetCameraId())
+	if err != nil {
+		return nil, err
+	}
+
+	if state == nil {
+		return nil, connect.NewError(
+			connect.CodeNotFound,
+			errors.New("camera state not found"),
+		)
+	}
+
+	return connect.NewResponse(&protov1.GetCameraStateResponse{
+		State: state,
+	}), nil
 }

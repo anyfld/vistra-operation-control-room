@@ -62,7 +62,9 @@ func main() {
 		mux.Handle(path, h)
 	}
 
-	if path, h := protov1connect.NewFDServiceHandler(&handlers.FDHandler{}); path != "" {
+	fdRepo := infrastructure.NewFDRepo()
+	fdUC := usecase.NewFDUsecase(fdRepo)
+	if path, h := protov1connect.NewFDServiceHandler(handlers.NewFDHandler(fdUC)); path != "" {
 		mux.Handle(path, h)
 	}
 
