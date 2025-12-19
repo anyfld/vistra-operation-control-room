@@ -18,6 +18,8 @@ import (
 	"github.com/anyfld/vistra-operation-control-room/gen/proto/v1/protov1connect"
 	"github.com/anyfld/vistra-operation-control-room/internal/middleware"
 	handlers "github.com/anyfld/vistra-operation-control-room/pkg/transport/handlers"
+	"github.com/anyfld/vistra-operation-control-room/pkg/transport/infrastructure"
+	"github.com/anyfld/vistra-operation-control-room/pkg/transport/usecase"
 )
 
 const (
@@ -51,7 +53,8 @@ func main() {
 		mux.Handle(path, h)
 	}
 
-	if path, h := protov1connect.NewCRServiceHandler(&handlers.CRHandler{}); path != "" {
+	uc := usecase.New(infrastructure.NewInMemoryRepo())
+	if path, h := protov1connect.NewCRServiceHandler(handlers.NewCRHandler(uc)); path != "" {
 		mux.Handle(path, h)
 	}
 
