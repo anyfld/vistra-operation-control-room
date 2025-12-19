@@ -7,7 +7,7 @@ import (
 	"github.com/anyfld/vistra-operation-control-room/pkg/transport/infrastructure"
 )
 
-type FDInteractor interface {
+type FDInteractor interface { //nolint:interfacebloat
 	ExecuteCinematography(
 		ctx context.Context,
 		req *protov1.ExecuteCinematographyRequest,
@@ -49,6 +49,15 @@ type FDInteractor interface {
 		ctx context.Context,
 		cameraID string,
 	) (*protov1.CameraState, error)
+	SubscribePTZCommands(
+		ctx context.Context,
+		cameraID string,
+	) (<-chan *infrastructure.PTZCommandEvent, error)
+	UnsubscribePTZCommands(
+		ctx context.Context,
+		cameraID string,
+		ch <-chan *infrastructure.PTZCommandEvent,
+	) error
 }
 
 type FDUsecase struct {
@@ -57,6 +66,23 @@ type FDUsecase struct {
 
 func NewFDUsecase(repo *infrastructure.FDRepo) *FDUsecase {
 	return &FDUsecase{repo: repo}
+}
+
+func (u *FDUsecase) SubscribePTZCommands(
+	ctx context.Context,
+	cameraID string,
+) (<-chan *infrastructure.PTZCommandEvent, error) {
+	return u.repo.SubscribePTZCommands(cameraID), nil
+}
+
+func (u *FDUsecase) UnsubscribePTZCommands(
+	ctx context.Context,
+	cameraID string,
+	ch <-chan *infrastructure.PTZCommandEvent,
+) error {
+	u.repo.UnsubscribePTZCommands(cameraID, ch)
+
+	return nil
 }
 
 func (u *FDUsecase) ExecuteCinematography(

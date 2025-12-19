@@ -1,10 +1,16 @@
-.PHONY: build run test test-coverage fmt vet lint generate clean tidy
+.PHONY: build run test test-coverage fmt vet lint generate clean tidy info sample
 
 build:
 	go build -o bin/server ./cmd/server
 
 run:
 	go run ./cmd/server
+
+info:
+	go run ./cmd/info
+
+sample:
+	go run ./cmd/sample
 
 test:
 	go test -v ./...

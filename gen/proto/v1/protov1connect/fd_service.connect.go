@@ -53,18 +53,9 @@ const (
 	// FDServiceCalculateFramingProcedure is the fully-qualified name of the FDService's
 	// CalculateFraming RPC.
 	FDServiceCalculateFramingProcedure = "/v1.FDService/CalculateFraming"
-	// FDServiceSendControlCommandProcedure is the fully-qualified name of the FDService's
-	// SendControlCommand RPC.
-	FDServiceSendControlCommandProcedure = "/v1.FDService/SendControlCommand"
 	// FDServiceStreamControlCommandsProcedure is the fully-qualified name of the FDService's
 	// StreamControlCommands RPC.
 	FDServiceStreamControlCommandsProcedure = "/v1.FDService/StreamControlCommands"
-	// FDServiceReportCameraStateProcedure is the fully-qualified name of the FDService's
-	// ReportCameraState RPC.
-	FDServiceReportCameraStateProcedure = "/v1.FDService/ReportCameraState"
-	// FDServiceGetCameraStateProcedure is the fully-qualified name of the FDService's GetCameraState
-	// RPC.
-	FDServiceGetCameraStateProcedure = "/v1.FDService/GetCameraState"
 )
 
 // FDServiceClient is a client for the v1.FDService service.
@@ -80,11 +71,7 @@ type FDServiceClient interface {
 	// 画角計算
 	CalculateFraming(context.Context, *connect.Request[v1.CalculateFramingRequest]) (*connect.Response[v1.CalculateFramingResponse], error)
 	// CO への制御コマンド
-	SendControlCommand(context.Context, *connect.Request[v1.SendControlCommandRequest]) (*connect.Response[v1.SendControlCommandResponse], error)
-	StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest]) (*connect.ServerStreamForClient[v1.StreamControlCommandsResponse], error)
-	// カメラ状態の報告
-	ReportCameraState(context.Context, *connect.Request[v1.ReportCameraStateRequest]) (*connect.Response[v1.ReportCameraStateResponse], error)
-	GetCameraState(context.Context, *connect.Request[v1.GetCameraStateRequest]) (*connect.Response[v1.GetCameraStateResponse], error)
+	StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest]) (*connect.Response[v1.StreamControlCommandsResponse], error)
 }
 
 // NewFDServiceClient constructs a client for the v1.FDService service. By default, it uses the
@@ -140,28 +127,10 @@ func NewFDServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...c
 			connect.WithSchema(fDServiceMethods.ByName("CalculateFraming")),
 			connect.WithClientOptions(opts...),
 		),
-		sendControlCommand: connect.NewClient[v1.SendControlCommandRequest, v1.SendControlCommandResponse](
-			httpClient,
-			baseURL+FDServiceSendControlCommandProcedure,
-			connect.WithSchema(fDServiceMethods.ByName("SendControlCommand")),
-			connect.WithClientOptions(opts...),
-		),
 		streamControlCommands: connect.NewClient[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse](
 			httpClient,
 			baseURL+FDServiceStreamControlCommandsProcedure,
 			connect.WithSchema(fDServiceMethods.ByName("StreamControlCommands")),
-			connect.WithClientOptions(opts...),
-		),
-		reportCameraState: connect.NewClient[v1.ReportCameraStateRequest, v1.ReportCameraStateResponse](
-			httpClient,
-			baseURL+FDServiceReportCameraStateProcedure,
-			connect.WithSchema(fDServiceMethods.ByName("ReportCameraState")),
-			connect.WithClientOptions(opts...),
-		),
-		getCameraState: connect.NewClient[v1.GetCameraStateRequest, v1.GetCameraStateResponse](
-			httpClient,
-			baseURL+FDServiceGetCameraStateProcedure,
-			connect.WithSchema(fDServiceMethods.ByName("GetCameraState")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -176,10 +145,7 @@ type fDServiceClient struct {
 	stopPatternMatching              *connect.Client[v1.StopPatternMatchingRequest, v1.StopPatternMatchingResponse]
 	streamPatternMatchResults        *connect.Client[v1.StreamPatternMatchResultsRequest, v1.StreamPatternMatchResultsResponse]
 	calculateFraming                 *connect.Client[v1.CalculateFramingRequest, v1.CalculateFramingResponse]
-	sendControlCommand               *connect.Client[v1.SendControlCommandRequest, v1.SendControlCommandResponse]
 	streamControlCommands            *connect.Client[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse]
-	reportCameraState                *connect.Client[v1.ReportCameraStateRequest, v1.ReportCameraStateResponse]
-	getCameraState                   *connect.Client[v1.GetCameraStateRequest, v1.GetCameraStateResponse]
 }
 
 // ExecuteCinematography calls v1.FDService.ExecuteCinematography.
@@ -217,24 +183,9 @@ func (c *fDServiceClient) CalculateFraming(ctx context.Context, req *connect.Req
 	return c.calculateFraming.CallUnary(ctx, req)
 }
 
-// SendControlCommand calls v1.FDService.SendControlCommand.
-func (c *fDServiceClient) SendControlCommand(ctx context.Context, req *connect.Request[v1.SendControlCommandRequest]) (*connect.Response[v1.SendControlCommandResponse], error) {
-	return c.sendControlCommand.CallUnary(ctx, req)
-}
-
 // StreamControlCommands calls v1.FDService.StreamControlCommands.
-func (c *fDServiceClient) StreamControlCommands(ctx context.Context, req *connect.Request[v1.StreamControlCommandsRequest]) (*connect.ServerStreamForClient[v1.StreamControlCommandsResponse], error) {
-	return c.streamControlCommands.CallServerStream(ctx, req)
-}
-
-// ReportCameraState calls v1.FDService.ReportCameraState.
-func (c *fDServiceClient) ReportCameraState(ctx context.Context, req *connect.Request[v1.ReportCameraStateRequest]) (*connect.Response[v1.ReportCameraStateResponse], error) {
-	return c.reportCameraState.CallUnary(ctx, req)
-}
-
-// GetCameraState calls v1.FDService.GetCameraState.
-func (c *fDServiceClient) GetCameraState(ctx context.Context, req *connect.Request[v1.GetCameraStateRequest]) (*connect.Response[v1.GetCameraStateResponse], error) {
-	return c.getCameraState.CallUnary(ctx, req)
+func (c *fDServiceClient) StreamControlCommands(ctx context.Context, req *connect.Request[v1.StreamControlCommandsRequest]) (*connect.Response[v1.StreamControlCommandsResponse], error) {
+	return c.streamControlCommands.CallUnary(ctx, req)
 }
 
 // FDServiceHandler is an implementation of the v1.FDService service.
@@ -250,11 +201,7 @@ type FDServiceHandler interface {
 	// 画角計算
 	CalculateFraming(context.Context, *connect.Request[v1.CalculateFramingRequest]) (*connect.Response[v1.CalculateFramingResponse], error)
 	// CO への制御コマンド
-	SendControlCommand(context.Context, *connect.Request[v1.SendControlCommandRequest]) (*connect.Response[v1.SendControlCommandResponse], error)
-	StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest], *connect.ServerStream[v1.StreamControlCommandsResponse]) error
-	// カメラ状態の報告
-	ReportCameraState(context.Context, *connect.Request[v1.ReportCameraStateRequest]) (*connect.Response[v1.ReportCameraStateResponse], error)
-	GetCameraState(context.Context, *connect.Request[v1.GetCameraStateRequest]) (*connect.Response[v1.GetCameraStateResponse], error)
+	StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest]) (*connect.Response[v1.StreamControlCommandsResponse], error)
 }
 
 // NewFDServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -306,28 +253,10 @@ func NewFDServiceHandler(svc FDServiceHandler, opts ...connect.HandlerOption) (s
 		connect.WithSchema(fDServiceMethods.ByName("CalculateFraming")),
 		connect.WithHandlerOptions(opts...),
 	)
-	fDServiceSendControlCommandHandler := connect.NewUnaryHandler(
-		FDServiceSendControlCommandProcedure,
-		svc.SendControlCommand,
-		connect.WithSchema(fDServiceMethods.ByName("SendControlCommand")),
-		connect.WithHandlerOptions(opts...),
-	)
-	fDServiceStreamControlCommandsHandler := connect.NewServerStreamHandler(
+	fDServiceStreamControlCommandsHandler := connect.NewUnaryHandler(
 		FDServiceStreamControlCommandsProcedure,
 		svc.StreamControlCommands,
 		connect.WithSchema(fDServiceMethods.ByName("StreamControlCommands")),
-		connect.WithHandlerOptions(opts...),
-	)
-	fDServiceReportCameraStateHandler := connect.NewUnaryHandler(
-		FDServiceReportCameraStateProcedure,
-		svc.ReportCameraState,
-		connect.WithSchema(fDServiceMethods.ByName("ReportCameraState")),
-		connect.WithHandlerOptions(opts...),
-	)
-	fDServiceGetCameraStateHandler := connect.NewUnaryHandler(
-		FDServiceGetCameraStateProcedure,
-		svc.GetCameraState,
-		connect.WithSchema(fDServiceMethods.ByName("GetCameraState")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/v1.FDService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -346,14 +275,8 @@ func NewFDServiceHandler(svc FDServiceHandler, opts ...connect.HandlerOption) (s
 			fDServiceStreamPatternMatchResultsHandler.ServeHTTP(w, r)
 		case FDServiceCalculateFramingProcedure:
 			fDServiceCalculateFramingHandler.ServeHTTP(w, r)
-		case FDServiceSendControlCommandProcedure:
-			fDServiceSendControlCommandHandler.ServeHTTP(w, r)
 		case FDServiceStreamControlCommandsProcedure:
 			fDServiceStreamControlCommandsHandler.ServeHTTP(w, r)
-		case FDServiceReportCameraStateProcedure:
-			fDServiceReportCameraStateHandler.ServeHTTP(w, r)
-		case FDServiceGetCameraStateProcedure:
-			fDServiceGetCameraStateHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -391,18 +314,6 @@ func (UnimplementedFDServiceHandler) CalculateFraming(context.Context, *connect.
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.CalculateFraming is not implemented"))
 }
 
-func (UnimplementedFDServiceHandler) SendControlCommand(context.Context, *connect.Request[v1.SendControlCommandRequest]) (*connect.Response[v1.SendControlCommandResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.SendControlCommand is not implemented"))
-}
-
-func (UnimplementedFDServiceHandler) StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest], *connect.ServerStream[v1.StreamControlCommandsResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.StreamControlCommands is not implemented"))
-}
-
-func (UnimplementedFDServiceHandler) ReportCameraState(context.Context, *connect.Request[v1.ReportCameraStateRequest]) (*connect.Response[v1.ReportCameraStateResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.ReportCameraState is not implemented"))
-}
-
-func (UnimplementedFDServiceHandler) GetCameraState(context.Context, *connect.Request[v1.GetCameraStateRequest]) (*connect.Response[v1.GetCameraStateResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.GetCameraState is not implemented"))
+func (UnimplementedFDServiceHandler) StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest]) (*connect.Response[v1.StreamControlCommandsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.StreamControlCommands is not implemented"))
 }

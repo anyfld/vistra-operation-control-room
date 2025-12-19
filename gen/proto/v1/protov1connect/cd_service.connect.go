@@ -50,14 +50,9 @@ const (
 	// CameraServiceSwitchCameraModeProcedure is the fully-qualified name of the CameraService's
 	// SwitchCameraMode RPC.
 	CameraServiceSwitchCameraModeProcedure = "/v1.CameraService/SwitchCameraMode"
-	// CameraServiceHeartbeatProcedure is the fully-qualified name of the CameraService's Heartbeat RPC.
-	CameraServiceHeartbeatProcedure = "/v1.CameraService/Heartbeat"
 	// CameraServiceStreamConnectionStatusProcedure is the fully-qualified name of the CameraService's
 	// StreamConnectionStatus RPC.
 	CameraServiceStreamConnectionStatusProcedure = "/v1.CameraService/StreamConnectionStatus"
-	// CameraServiceGetCameraCapabilitiesProcedure is the fully-qualified name of the CameraService's
-	// GetCameraCapabilities RPC.
-	CameraServiceGetCameraCapabilitiesProcedure = "/v1.CameraService/GetCameraCapabilities"
 )
 
 // CameraServiceClient is a client for the v1.CameraService service.
@@ -71,11 +66,8 @@ type CameraServiceClient interface {
 	ListCameras(context.Context, *connect.Request[v1.ListCamerasRequest]) (*connect.Response[v1.ListCamerasResponse], error)
 	// モード切替
 	SwitchCameraMode(context.Context, *connect.Request[v1.SwitchCameraModeRequest]) (*connect.Response[v1.SwitchCameraModeResponse], error)
-	// 接続状態監視
-	Heartbeat(context.Context, *connect.Request[v1.HeartbeatRequest]) (*connect.Response[v1.HeartbeatResponse], error)
+	// 接続状態監視 (ストリーム上の状態更新に基づく)
 	StreamConnectionStatus(context.Context, *connect.Request[v1.StreamConnectionStatusRequest]) (*connect.ServerStreamForClient[v1.StreamConnectionStatusResponse], error)
-	// カメラ能力取得
-	GetCameraCapabilities(context.Context, *connect.Request[v1.GetCameraCapabilitiesRequest]) (*connect.Response[v1.GetCameraCapabilitiesResponse], error)
 }
 
 // NewCameraServiceClient constructs a client for the v1.CameraService service. By default, it uses
@@ -125,22 +117,10 @@ func NewCameraServiceClient(httpClient connect.HTTPClient, baseURL string, opts 
 			connect.WithSchema(cameraServiceMethods.ByName("SwitchCameraMode")),
 			connect.WithClientOptions(opts...),
 		),
-		heartbeat: connect.NewClient[v1.HeartbeatRequest, v1.HeartbeatResponse](
-			httpClient,
-			baseURL+CameraServiceHeartbeatProcedure,
-			connect.WithSchema(cameraServiceMethods.ByName("Heartbeat")),
-			connect.WithClientOptions(opts...),
-		),
 		streamConnectionStatus: connect.NewClient[v1.StreamConnectionStatusRequest, v1.StreamConnectionStatusResponse](
 			httpClient,
 			baseURL+CameraServiceStreamConnectionStatusProcedure,
 			connect.WithSchema(cameraServiceMethods.ByName("StreamConnectionStatus")),
-			connect.WithClientOptions(opts...),
-		),
-		getCameraCapabilities: connect.NewClient[v1.GetCameraCapabilitiesRequest, v1.GetCameraCapabilitiesResponse](
-			httpClient,
-			baseURL+CameraServiceGetCameraCapabilitiesProcedure,
-			connect.WithSchema(cameraServiceMethods.ByName("GetCameraCapabilities")),
 			connect.WithClientOptions(opts...),
 		),
 	}
@@ -154,9 +134,7 @@ type cameraServiceClient struct {
 	getCamera              *connect.Client[v1.GetCameraRequest, v1.GetCameraResponse]
 	listCameras            *connect.Client[v1.ListCamerasRequest, v1.ListCamerasResponse]
 	switchCameraMode       *connect.Client[v1.SwitchCameraModeRequest, v1.SwitchCameraModeResponse]
-	heartbeat              *connect.Client[v1.HeartbeatRequest, v1.HeartbeatResponse]
 	streamConnectionStatus *connect.Client[v1.StreamConnectionStatusRequest, v1.StreamConnectionStatusResponse]
-	getCameraCapabilities  *connect.Client[v1.GetCameraCapabilitiesRequest, v1.GetCameraCapabilitiesResponse]
 }
 
 // RegisterCamera calls v1.CameraService.RegisterCamera.
@@ -189,19 +167,9 @@ func (c *cameraServiceClient) SwitchCameraMode(ctx context.Context, req *connect
 	return c.switchCameraMode.CallUnary(ctx, req)
 }
 
-// Heartbeat calls v1.CameraService.Heartbeat.
-func (c *cameraServiceClient) Heartbeat(ctx context.Context, req *connect.Request[v1.HeartbeatRequest]) (*connect.Response[v1.HeartbeatResponse], error) {
-	return c.heartbeat.CallUnary(ctx, req)
-}
-
 // StreamConnectionStatus calls v1.CameraService.StreamConnectionStatus.
 func (c *cameraServiceClient) StreamConnectionStatus(ctx context.Context, req *connect.Request[v1.StreamConnectionStatusRequest]) (*connect.ServerStreamForClient[v1.StreamConnectionStatusResponse], error) {
 	return c.streamConnectionStatus.CallServerStream(ctx, req)
-}
-
-// GetCameraCapabilities calls v1.CameraService.GetCameraCapabilities.
-func (c *cameraServiceClient) GetCameraCapabilities(ctx context.Context, req *connect.Request[v1.GetCameraCapabilitiesRequest]) (*connect.Response[v1.GetCameraCapabilitiesResponse], error) {
-	return c.getCameraCapabilities.CallUnary(ctx, req)
 }
 
 // CameraServiceHandler is an implementation of the v1.CameraService service.
@@ -215,11 +183,8 @@ type CameraServiceHandler interface {
 	ListCameras(context.Context, *connect.Request[v1.ListCamerasRequest]) (*connect.Response[v1.ListCamerasResponse], error)
 	// モード切替
 	SwitchCameraMode(context.Context, *connect.Request[v1.SwitchCameraModeRequest]) (*connect.Response[v1.SwitchCameraModeResponse], error)
-	// 接続状態監視
-	Heartbeat(context.Context, *connect.Request[v1.HeartbeatRequest]) (*connect.Response[v1.HeartbeatResponse], error)
+	// 接続状態監視 (ストリーム上の状態更新に基づく)
 	StreamConnectionStatus(context.Context, *connect.Request[v1.StreamConnectionStatusRequest], *connect.ServerStream[v1.StreamConnectionStatusResponse]) error
-	// カメラ能力取得
-	GetCameraCapabilities(context.Context, *connect.Request[v1.GetCameraCapabilitiesRequest]) (*connect.Response[v1.GetCameraCapabilitiesResponse], error)
 }
 
 // NewCameraServiceHandler builds an HTTP handler from the service implementation. It returns the
@@ -265,22 +230,10 @@ func NewCameraServiceHandler(svc CameraServiceHandler, opts ...connect.HandlerOp
 		connect.WithSchema(cameraServiceMethods.ByName("SwitchCameraMode")),
 		connect.WithHandlerOptions(opts...),
 	)
-	cameraServiceHeartbeatHandler := connect.NewUnaryHandler(
-		CameraServiceHeartbeatProcedure,
-		svc.Heartbeat,
-		connect.WithSchema(cameraServiceMethods.ByName("Heartbeat")),
-		connect.WithHandlerOptions(opts...),
-	)
 	cameraServiceStreamConnectionStatusHandler := connect.NewServerStreamHandler(
 		CameraServiceStreamConnectionStatusProcedure,
 		svc.StreamConnectionStatus,
 		connect.WithSchema(cameraServiceMethods.ByName("StreamConnectionStatus")),
-		connect.WithHandlerOptions(opts...),
-	)
-	cameraServiceGetCameraCapabilitiesHandler := connect.NewUnaryHandler(
-		CameraServiceGetCameraCapabilitiesProcedure,
-		svc.GetCameraCapabilities,
-		connect.WithSchema(cameraServiceMethods.ByName("GetCameraCapabilities")),
 		connect.WithHandlerOptions(opts...),
 	)
 	return "/v1.CameraService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
@@ -297,12 +250,8 @@ func NewCameraServiceHandler(svc CameraServiceHandler, opts ...connect.HandlerOp
 			cameraServiceListCamerasHandler.ServeHTTP(w, r)
 		case CameraServiceSwitchCameraModeProcedure:
 			cameraServiceSwitchCameraModeHandler.ServeHTTP(w, r)
-		case CameraServiceHeartbeatProcedure:
-			cameraServiceHeartbeatHandler.ServeHTTP(w, r)
 		case CameraServiceStreamConnectionStatusProcedure:
 			cameraServiceStreamConnectionStatusHandler.ServeHTTP(w, r)
-		case CameraServiceGetCameraCapabilitiesProcedure:
-			cameraServiceGetCameraCapabilitiesHandler.ServeHTTP(w, r)
 		default:
 			http.NotFound(w, r)
 		}
@@ -336,14 +285,6 @@ func (UnimplementedCameraServiceHandler) SwitchCameraMode(context.Context, *conn
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.CameraService.SwitchCameraMode is not implemented"))
 }
 
-func (UnimplementedCameraServiceHandler) Heartbeat(context.Context, *connect.Request[v1.HeartbeatRequest]) (*connect.Response[v1.HeartbeatResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.CameraService.Heartbeat is not implemented"))
-}
-
 func (UnimplementedCameraServiceHandler) StreamConnectionStatus(context.Context, *connect.Request[v1.StreamConnectionStatusRequest], *connect.ServerStream[v1.StreamConnectionStatusResponse]) error {
 	return connect.NewError(connect.CodeUnimplemented, errors.New("v1.CameraService.StreamConnectionStatus is not implemented"))
-}
-
-func (UnimplementedCameraServiceHandler) GetCameraCapabilities(context.Context, *connect.Request[v1.GetCameraCapabilitiesRequest]) (*connect.Response[v1.GetCameraCapabilitiesResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.CameraService.GetCameraCapabilities is not implemented"))
 }

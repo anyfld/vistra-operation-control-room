@@ -251,40 +251,23 @@ func (h *MDHandler) SendToLLM(
 func (h *MDHandler) ReceiveFromLLM(
 	ctx context.Context,
 	req *connect.Request[protov1.ReceiveFromLLMRequest],
-	stream *connect.ServerStream[protov1.ReceiveFromLLMResponse],
-) error {
+) (*connect.Response[protov1.ReceiveFromLLMResponse], error) {
 	requestID := req.Msg.GetRequestId()
 
-	for range 3 {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		prompt, llmContext, err := h.uc.GetLLMRequest(ctx, requestID)
-		if err != nil {
-			return err
-		}
-
-		if prompt != "" {
-			if err := stream.Send(&protov1.ReceiveFromLLMResponse{
-				RequestId:   requestID,
-				Text:        prompt,
-				Instruction: nil,
-				IsComplete:  true,
-				TimestampMs: time.Now().UnixMilli(),
-			}); err != nil {
-				return err
-			}
-		}
-
-		_ = llmContext
-
-		time.Sleep(mdPollingIntervalMs * time.Millisecond)
+	prompt, llmContext, err := h.uc.GetLLMRequest(ctx, requestID)
+	if err != nil {
+		return nil, err
 	}
 
-	return nil
+	_ = llmContext
+
+	return connect.NewResponse(&protov1.ReceiveFromLLMResponse{
+		RequestId:   requestID,
+		Text:        prompt,
+		Instruction: nil,
+		IsComplete:  prompt != "",
+		TimestampMs: time.Now().UnixMilli(),
+	}), nil
 }
 
 func (h *MDHandler) collectOutputs(

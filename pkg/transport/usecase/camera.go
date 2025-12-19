@@ -18,11 +18,18 @@ type CameraInteractor interface {
 	) (*protov1.Camera, *protov1.CameraConnection, *protov1.CameraCapabilities, error)
 	ListCameras(ctx context.Context, req *protov1.ListCamerasRequest) ([]*protov1.Camera, error)
 	SwitchCameraMode(ctx context.Context, cameraID string, mode protov1.CameraMode) (bool, error)
-	Heartbeat(ctx context.Context, req *protov1.HeartbeatRequest) (bool, error)
+	UpdateCameraState(
+		ctx context.Context,
+		cameraID string,
+		ptz *protov1.PTZParameters,
+		status protov1.CameraStatus,
+	) (bool, error)
 	GetConnectionStatus(ctx context.Context, cameraID string) (protov1.CameraStatus, bool, error)
 	GetAllConnectionStatuses(ctx context.Context, cameraIDs []string) (map[string]protov1.CameraStatus, error)
-	GetCameraCapabilities(ctx context.Context, cameraID string) (*protov1.CameraCapabilities, error)
+	CheckAndUpdateDisconnectedCameras(ctx context.Context) error
 }
+
+var ErrCameraNotFound = errors.New("camera not found")
 
 type CameraUsecase struct {
 	repo *infrastructure.CameraRepo
@@ -52,7 +59,7 @@ func (u *CameraUsecase) UpdateCamera(
 ) (*protov1.Camera, error) {
 	camera := u.repo.UpdateCamera(req.GetCameraId(), req)
 	if camera == nil {
-		return nil, errors.New("camera not found")
+		return nil, ErrCameraNotFound
 	}
 
 	return camera, nil
@@ -92,15 +99,18 @@ func (u *CameraUsecase) SwitchCameraMode(
 	return u.repo.SwitchCameraMode(cameraID, mode), nil
 }
 
-func (u *CameraUsecase) Heartbeat(
+func (u *CameraUsecase) UpdateCameraState(
 	ctx context.Context,
-	req *protov1.HeartbeatRequest,
+	cameraID string,
+	ptz *protov1.PTZParameters,
+	status protov1.CameraStatus,
 ) (bool, error) {
-	return u.repo.UpdateHeartbeat(
-		req.GetCameraId(),
-		req.GetCurrentPtz(),
-		req.GetStatus(),
-	), nil
+	success := u.repo.UpdateCameraState(cameraID, ptz, status)
+	if !success {
+		return false, ErrCameraNotFound
+	}
+
+	return true, nil
 }
 
 func (u *CameraUsecase) GetConnectionStatus(
@@ -131,9 +141,8 @@ func (u *CameraUsecase) GetAllConnectionStatuses(
 	return result, nil
 }
 
-func (u *CameraUsecase) GetCameraCapabilities(
-	ctx context.Context,
-	cameraID string,
-) (*protov1.CameraCapabilities, error) {
-	return u.repo.GetCapabilities(cameraID), nil
+func (u *CameraUsecase) CheckAndUpdateDisconnectedCameras(ctx context.Context) error {
+	u.repo.CheckAndUpdateDisconnectedCameras()
+
+	return nil
 }

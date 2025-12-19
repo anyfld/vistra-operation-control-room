@@ -1684,7 +1684,7 @@ func (x *ReceiveFromLLMRequest) GetRequestId() string {
 type ReceiveFromLLMResponse struct {
 	state     protoimpl.MessageState `protogen:"open.v1"`
 	RequestId string                 `protobuf:"bytes,1,opt,name=request_id,json=requestId,proto3" json:"request_id,omitempty"`
-	// レスポンステキスト (ストリーミングの場合は部分テキスト)
+	// レスポンステキスト
 	Text string `protobuf:"bytes,2,opt,name=text,proto3" json:"text,omitempty"`
 	// シネマトグラフィー指示 (解析された場合)
 	Instruction *CinematographyInstruction `protobuf:"bytes,3,opt,name=instruction,proto3" json:"instruction,omitempty"`
@@ -1972,7 +1972,7 @@ const file_v1_md_service_proto_rawDesc = "" +
 	"\x1cSTREAMING_EVENT_TYPE_STOPPED\x10\x02\x12(\n" +
 	"$STREAMING_EVENT_TYPE_SOURCE_SWITCHED\x10\x03\x12\x1e\n" +
 	"\x1aSTREAMING_EVENT_TYPE_ERROR\x10\x04\x12\"\n" +
-	"\x1eSTREAMING_EVENT_TYPE_RECOVERED\x10\x052\x89\t\n" +
+	"\x1eSTREAMING_EVENT_TYPE_RECOVERED\x10\x052\x87\t\n" +
 	"\tMDService\x12\x7f\n" +
 	" ReceiveCinematographyInstruction\x12+.v1.ReceiveCinematographyInstructionRequest\x1a,.v1.ReceiveCinematographyInstructionResponse\"\x00\x12\x93\x01\n" +
 	" StreamCinematographyInstructions\x124.v1.MDServiceStreamCinematographyInstructionsRequest\x1a5.v1.MDServiceStreamCinematographyInstructionsResponse\"\x000\x01\x12@\n" +
@@ -1985,8 +1985,8 @@ const file_v1_md_service_proto_rawDesc = "" +
 	"\fSwitchSource\x12\x17.v1.SwitchSourceRequest\x1a\x18.v1.SwitchSourceResponse\"\x00\x12U\n" +
 	"\x12GetStreamingStatus\x12\x1d.v1.GetStreamingStatusRequest\x1a\x1e.v1.GetStreamingStatusResponse\"\x00\x12`\n" +
 	"\x15StreamStreamingEvents\x12 .v1.StreamStreamingEventsRequest\x1a!.v1.StreamStreamingEventsResponse\"\x000\x01\x12:\n" +
-	"\tSendToLLM\x12\x14.v1.SendToLLMRequest\x1a\x15.v1.SendToLLMResponse\"\x00\x12K\n" +
-	"\x0eReceiveFromLLM\x12\x19.v1.ReceiveFromLLMRequest\x1a\x1a.v1.ReceiveFromLLMResponse\"\x000\x01BFZDgithub.com/anyfld/vistra-operation-control-room/gen/proto/v1;protov1b\x06proto3"
+	"\tSendToLLM\x12\x14.v1.SendToLLMRequest\x1a\x15.v1.SendToLLMResponse\"\x00\x12I\n" +
+	"\x0eReceiveFromLLM\x12\x19.v1.ReceiveFromLLMRequest\x1a\x1a.v1.ReceiveFromLLMResponse\"\x00BFZDgithub.com/anyfld/vistra-operation-control-room/gen/proto/v1;protov1b\x06proto3"
 
 var (
 	file_v1_md_service_proto_rawDescOnce sync.Once

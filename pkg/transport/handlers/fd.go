@@ -3,10 +3,12 @@ package handlers
 import (
 	"context"
 	"errors"
+	"log"
 	"time"
 
 	"connectrpc.com/connect"
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
+	"github.com/anyfld/vistra-operation-control-room/pkg/transport/infrastructure"
 	"github.com/anyfld/vistra-operation-control-room/pkg/transport/usecase"
 )
 
@@ -20,11 +22,15 @@ const (
 )
 
 type FDHandler struct {
-	uc usecase.FDInteractor
+	uc       usecase.FDInteractor
+	cameraUC usecase.CameraInteractor
 }
 
-func NewFDHandler(uc usecase.FDInteractor) *FDHandler {
-	return &FDHandler{uc: uc}
+func NewFDHandler(uc usecase.FDInteractor, cameraUC usecase.CameraInteractor) *FDHandler {
+	return &FDHandler{
+		uc:       uc,
+		cameraUC: cameraUC,
+	}
 }
 
 func (h *FDHandler) ExecuteCinematography(
@@ -192,85 +198,317 @@ func (h *FDHandler) CalculateFraming(
 	}), nil
 }
 
-func (h *FDHandler) SendControlCommand(
-	ctx context.Context,
-	req *connect.Request[protov1.SendControlCommandRequest],
-) (*connect.Response[protov1.SendControlCommandResponse], error) {
-	result, err := h.uc.SendControlCommand(ctx, req.Msg.GetCommand())
-	if err != nil {
-		return nil, err
-	}
-
-	return connect.NewResponse(&protov1.SendControlCommandResponse{
-		Result: result,
-	}), nil
-}
-
 func (h *FDHandler) StreamControlCommands(
 	ctx context.Context,
 	req *connect.Request[protov1.StreamControlCommandsRequest],
-	stream *connect.ServerStream[protov1.StreamControlCommandsResponse],
-) error {
-	cameraID := req.Msg.GetCameraId()
-
-	for range 5 {
-		select {
-		case <-ctx.Done():
-			return ctx.Err()
-		default:
-		}
-
-		command, err := h.uc.GetControlCommand(ctx, cameraID)
-		if err != nil {
-			return err
-		}
-
-		if command != nil {
-			if err := stream.Send(&protov1.StreamControlCommandsResponse{
-				Command:     command,
-				TimestampMs: time.Now().UnixMilli(),
-			}); err != nil {
-				return err
-			}
-		}
-
-		time.Sleep(fdPollingIntervalMs * time.Millisecond)
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	message := req.Msg
+	if message == nil {
+		return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
+			// Command, Result, Status, TimestampMs are optional for empty response
+		}), nil
 	}
 
-	return nil
-}
-
-func (h *FDHandler) ReportCameraState(
-	ctx context.Context,
-	req *connect.Request[protov1.ReportCameraStateRequest],
-) (*connect.Response[protov1.ReportCameraStateResponse], error) {
-	acknowledged, err := h.uc.ReportCameraState(ctx, req.Msg.GetState())
-	if err != nil {
-		return nil, err
+	if init := message.GetInit(); init != nil {
+		return h.handleInitMessage(ctx, init)
 	}
 
-	return connect.NewResponse(&protov1.ReportCameraStateResponse{
-		Acknowledged: acknowledged,
+	if command := message.GetCommand(); command != nil {
+		return h.handleCommandMessage(ctx, command)
+	}
+
+	if message.GetResult() != nil {
+		return h.handleResultMessage()
+	}
+
+	if state := message.GetState(); state != nil {
+		return h.handleStateMessage(ctx, state)
+	}
+
+	return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
+		Status: &protov1.StreamControlCommandsStatus{
+			Connected: true,
+			Message:   "no operation",
+		},
+		TimestampMs: time.Now().UnixMilli(),
+		// Command, Result are optional
 	}), nil
 }
 
-func (h *FDHandler) GetCameraState(
+func (h *FDHandler) handleInitMessage(
 	ctx context.Context,
-	req *connect.Request[protov1.GetCameraStateRequest],
-) (*connect.Response[protov1.GetCameraStateResponse], error) {
-	state, err := h.uc.GetCameraState(ctx, req.Msg.GetCameraId())
+	init *protov1.StreamControlCommandsInit,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	cameraID := init.GetCameraId()
+	if cameraID == "" {
+		log.Printf(
+			"fd stream control commands init failed: missing camera_id",
+		)
+
+		return nil, connect.NewError(
+			connect.CodeInvalidArgument,
+			errors.New("camera_id is required"),
+		)
+	}
+
+	log.Printf(
+		"fd stream control commands init: camera_id=%s",
+		cameraID,
+	)
+
+	commandCh, err := h.uc.SubscribePTZCommands(ctx, cameraID)
 	if err != nil {
 		return nil, err
 	}
 
-	if state == nil {
+	defer func() {
+		if unsubscribeErr := h.uc.UnsubscribePTZCommands(ctx, cameraID, commandCh); unsubscribeErr != nil {
+			_ = unsubscribeErr
+		}
+	}()
+
+	return h.waitForPTZEvent(ctx, cameraID, commandCh)
+}
+
+func (h *FDHandler) waitForPTZEvent(
+	ctx context.Context,
+	cameraID string,
+	commandCh <-chan *infrastructure.PTZCommandEvent,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	select {
+	case <-ctx.Done():
+		return nil, ctx.Err()
+	case event, ok := <-commandCh:
+		if !ok || event == nil {
+			return h.handleSubscriptionClosed(cameraID)
+		}
+
+		return h.handlePTZEvent(cameraID, event)
+	case <-time.After(fdPollingIntervalMs * time.Millisecond):
+		return h.handleNoEvents(cameraID)
+	}
+}
+
+func (h *FDHandler) handleSubscriptionClosed(
+	cameraID string,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	log.Printf(
+		"fd stream control commands subscription closed: camera_id=%s",
+		cameraID,
+	)
+
+	return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
+		Status: &protov1.StreamControlCommandsStatus{
+			Connected: false,
+			Message:   "subscription closed for camera: " + cameraID,
+		},
+		TimestampMs: time.Now().UnixMilli(),
+		// Command, Result are optional
+	}), nil
+}
+
+func (h *FDHandler) handlePTZEvent(
+	cameraID string,
+	event *infrastructure.PTZCommandEvent,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	if event.Result != nil {
+		return h.handleResultEvent(cameraID, event)
+	}
+
+	if event.Command != nil {
+		return h.handleCommandEvent(cameraID, event)
+	}
+
+	return h.handleEmptyEvent(cameraID)
+}
+
+func (h *FDHandler) handleResultEvent(
+	cameraID string,
+	event *infrastructure.PTZCommandEvent,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	log.Printf(
+		"fd stream control commands result event: camera_id=%s command_id=%s",
+		cameraID,
+		event.Result.GetCommandId(),
+	)
+
+	return connect.NewResponse(&protov1.StreamControlCommandsResponse{
+		Command: event.Command,
+		Result:  event.Result,
+		Status: &protov1.StreamControlCommandsStatus{
+			Connected: true,
+			Message:   "command result event",
+		},
+		TimestampMs: event.TimestampMs,
+	}), nil
+}
+
+func (h *FDHandler) handleCommandEvent(
+	cameraID string,
+	event *infrastructure.PTZCommandEvent,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	log.Printf(
+		"fd stream control commands command event: camera_id=%s command_id=%s",
+		cameraID,
+		event.Command.GetCommandId(),
+	)
+
+	return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
+		Command: event.Command,
+		Status: &protov1.StreamControlCommandsStatus{
+			Connected: true,
+			Message:   "command event",
+		},
+		TimestampMs: event.TimestampMs,
+		// Result is optional
+	}), nil
+}
+
+func (h *FDHandler) handleEmptyEvent(
+	cameraID string,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	log.Printf(
+		"fd stream control commands event without payload: camera_id=%s",
+		cameraID,
+	)
+
+	return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
+		Status: &protov1.StreamControlCommandsStatus{
+			Connected: true,
+			Message:   "no PTZ command payload for camera: " + cameraID,
+		},
+		TimestampMs: time.Now().UnixMilli(),
+		// Command, Result are optional
+	}), nil
+}
+
+func (h *FDHandler) handleNoEvents(
+	cameraID string,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
+		Status: &protov1.StreamControlCommandsStatus{
+			Connected: true,
+			Message:   "no new PTZ events for camera: " + cameraID,
+		},
+		TimestampMs: time.Now().UnixMilli(),
+		// Command, Result are optional
+	}), nil
+}
+
+func (h *FDHandler) handleCommandMessage(
+	ctx context.Context,
+	command *protov1.ControlCommand,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	log.Printf(
+		"fd stream control commands command: camera_id=%s command_id=%s",
+		command.GetCameraId(),
+		command.GetCommandId(),
+	)
+
+	result, err := h.uc.SendControlCommand(ctx, command)
+	if err != nil {
+		return nil, err
+	}
+
+	if result == nil {
+		return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
+			// Command, Result, Status, TimestampMs are optional for empty response
+		}), nil
+	}
+
+	return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
+		Result: result,
+		Status: &protov1.StreamControlCommandsStatus{
+			Connected: true,
+			Message:   "command accepted",
+		},
+		TimestampMs: time.Now().UnixMilli(),
+		// Command is optional
+	}), nil
+}
+
+func (h *FDHandler) handleResultMessage() (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	log.Printf("fd stream control commands result received")
+
+	return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
+		Status: &protov1.StreamControlCommandsStatus{
+			Connected: true,
+			Message:   "command result received",
+		},
+		TimestampMs: time.Now().UnixMilli(),
+		// Command, Result are optional
+	}), nil
+}
+
+func (h *FDHandler) handleStateMessage(
+	ctx context.Context,
+	state *protov1.CameraState,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	log.Printf(
+		"fd stream control commands state: camera_id=%s",
+		state.GetCameraId(),
+	)
+
+	_, err := h.uc.ReportCameraState(ctx, state)
+	if err != nil {
+		return nil, err
+	}
+
+	if h.cameraUC == nil {
+		return h.createStateUpdateResponse()
+	}
+
+	return h.updateCameraState(ctx, state)
+}
+
+func (h *FDHandler) updateCameraState(
+	ctx context.Context,
+	state *protov1.CameraState,
+) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	success, err := h.cameraUC.UpdateCameraState(
+		ctx,
+		state.GetCameraId(),
+		state.GetCurrentPtz(),
+		state.GetStatus(),
+	)
+	if err != nil {
+		if errors.Is(err, usecase.ErrCameraNotFound) {
+			log.Printf(
+				"fd stream control commands state failed: camera not found: camera_id=%s",
+				state.GetCameraId(),
+			)
+
+			return nil, connect.NewError(
+				connect.CodeNotFound,
+				err,
+			)
+		}
+
+		return nil, err
+	}
+
+	if !success {
+		log.Printf(
+			"fd stream control commands state failed: camera not found: camera_id=%s",
+			state.GetCameraId(),
+		)
+
 		return nil, connect.NewError(
 			connect.CodeNotFound,
-			errors.New("camera state not found"),
+			errors.New("camera not found"),
 		)
 	}
 
-	return connect.NewResponse(&protov1.GetCameraStateResponse{
-		State: state,
+	return h.createStateUpdateResponse()
+}
+
+func (h *FDHandler) createStateUpdateResponse() (*connect.Response[protov1.StreamControlCommandsResponse], error) {
+	return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
+		Status: &protov1.StreamControlCommandsStatus{
+			Connected: true,
+			Message:   "camera state updated",
+		},
+		TimestampMs: time.Now().UnixMilli(),
+		// Command, Result are optional
 	}), nil
 }

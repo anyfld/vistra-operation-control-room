@@ -39,7 +39,8 @@ func (h *ExampleServiceHandler) Ping(
 }
 
 func main() {
-	mux := setupHandlers()
+	cameraRepo := infrastructure.NewCameraRepo()
+	mux := setupHandlers(cameraRepo)
 	addr := getServerAddress()
 	server := createServer(addr, mux)
 
@@ -52,7 +53,7 @@ func main() {
 	}
 }
 
-func setupHandlers() *http.ServeMux {
+func setupHandlers(cameraRepo *infrastructure.CameraRepo) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	handler := &ExampleServiceHandler{}
@@ -60,9 +61,10 @@ func setupHandlers() *http.ServeMux {
 	mux.Handle(path, httpHandler)
 
 	registerMDService(mux)
-	registerCameraService(mux)
+	registerCameraService(mux, cameraRepo)
 	registerCRService(mux)
-	registerFDService(mux)
+	registerFDService(mux, cameraRepo)
+	registerPTZService(mux)
 
 	return mux
 }
@@ -76,15 +78,12 @@ func registerMDService(mux *http.ServeMux) {
 	}
 }
 
-func registerCameraService(mux *http.ServeMux) {
-	cameraRepo := infrastructure.NewCameraRepo()
-
+func registerCameraService(mux *http.ServeMux, cameraRepo *infrastructure.CameraRepo) {
 	cameraUC := usecase.NewCameraUsecase(cameraRepo)
 	if path, h := protov1connect.NewCameraServiceHandler(handlers.NewCameraHandler(cameraUC)); path != "" {
 		mux.Handle(path, h)
 	}
 }
-
 func registerCRService(mux *http.ServeMux) {
 	uc := usecase.New(infrastructure.NewInMemoryRepo())
 	if path, h := protov1connect.NewCRServiceHandler(handlers.NewCRHandler(uc)); path != "" {
@@ -92,11 +91,22 @@ func registerCRService(mux *http.ServeMux) {
 	}
 }
 
-func registerFDService(mux *http.ServeMux) {
+func registerFDService(mux *http.ServeMux, cameraRepo *infrastructure.CameraRepo) {
 	fdRepo := infrastructure.NewFDRepo()
 
 	fdUC := usecase.NewFDUsecase(fdRepo)
-	if path, h := protov1connect.NewFDServiceHandler(handlers.NewFDHandler(fdUC)); path != "" {
+	cameraUC := usecase.NewCameraUsecase(cameraRepo)
+
+	if path, h := protov1connect.NewFDServiceHandler(handlers.NewFDHandler(fdUC, cameraUC)); path != "" {
+		mux.Handle(path, h)
+	}
+}
+
+func registerPTZService(mux *http.ServeMux) {
+	ptzRepo := infrastructure.NewPTZRepo()
+
+	ptzUC := usecase.NewPTZUsecase(ptzRepo)
+	if path, h := protov1connect.NewPTZServiceHandler(handlers.NewPTZHandler(ptzUC)); path != "" {
 		mux.Handle(path, h)
 	}
 }
