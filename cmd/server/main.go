@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"sync"
 	"syscall"
 	"time"
 
@@ -26,6 +27,19 @@ const (
 	readHeaderTimeout = 10 * time.Second
 	shutdownTimeout   = 30 * time.Second
 )
+
+var (
+	sharedCameraRepo     *infrastructure.CameraRepo
+	sharedCameraRepoOnce sync.Once
+)
+
+func getSharedCameraRepo() *infrastructure.CameraRepo {
+	sharedCameraRepoOnce.Do(func() {
+		sharedCameraRepo = infrastructure.NewCameraRepo()
+	})
+
+	return sharedCameraRepo
+}
 
 type ExampleServiceHandler struct{}
 
@@ -77,7 +91,7 @@ func registerMDService(mux *http.ServeMux) {
 }
 
 func registerCameraService(mux *http.ServeMux) {
-	cameraRepo := infrastructure.NewCameraRepo()
+	cameraRepo := getSharedCameraRepo()
 
 	cameraUC := usecase.NewCameraUsecase(cameraRepo)
 	if path, h := protov1connect.NewCameraServiceHandler(handlers.NewCameraHandler(cameraUC)); path != "" {
@@ -93,7 +107,7 @@ func registerCRService(mux *http.ServeMux) {
 
 func registerFDService(mux *http.ServeMux) {
 	fdRepo := infrastructure.NewFDRepo()
-	cameraRepo := infrastructure.NewCameraRepo()
+	cameraRepo := getSharedCameraRepo()
 
 	fdUC := usecase.NewFDUsecase(fdRepo)
 	cameraUC := usecase.NewCameraUsecase(cameraRepo)
