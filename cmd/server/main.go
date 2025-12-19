@@ -49,7 +49,9 @@ func main() {
 		mux.Handle(path, h)
 	}
 
-	if path, h := protov1connect.NewCameraServiceHandler(&handlers.CameraHandler{}); path != "" {
+	cameraRepo := infrastructure.NewCameraRepo()
+	cameraUC := usecase.NewCameraUsecase(cameraRepo)
+	if path, h := protov1connect.NewCameraServiceHandler(handlers.NewCameraHandler(cameraUC)); path != "" {
 		mux.Handle(path, h)
 	}
 
