@@ -258,7 +258,8 @@ func (h *FDHandler) StreamControlCommands(
 				)
 
 				return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-					Result: event.Result,
+					Command: event.Command,
+					Result:  event.Result,
 					Status: &protov1.StreamControlCommandsStatus{
 						Connected: true,
 						Message:   "command result event",
