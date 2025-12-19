@@ -1824,182 +1824,6 @@ func (x *CameraState) GetStatus() CameraStatus {
 	return CameraStatus_CAMERA_STATUS_UNSPECIFIED
 }
 
-type ReportCameraStateRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	State         *CameraState           `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReportCameraStateRequest) Reset() {
-	*x = ReportCameraStateRequest{}
-	mi := &file_v1_fd_service_proto_msgTypes[26]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReportCameraStateRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReportCameraStateRequest) ProtoMessage() {}
-
-func (x *ReportCameraStateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_fd_service_proto_msgTypes[26]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReportCameraStateRequest.ProtoReflect.Descriptor instead.
-func (*ReportCameraStateRequest) Descriptor() ([]byte, []int) {
-	return file_v1_fd_service_proto_rawDescGZIP(), []int{26}
-}
-
-func (x *ReportCameraStateRequest) GetState() *CameraState {
-	if x != nil {
-		return x.State
-	}
-	return nil
-}
-
-type ReportCameraStateResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Acknowledged  bool                   `protobuf:"varint,1,opt,name=acknowledged,proto3" json:"acknowledged,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *ReportCameraStateResponse) Reset() {
-	*x = ReportCameraStateResponse{}
-	mi := &file_v1_fd_service_proto_msgTypes[27]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *ReportCameraStateResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*ReportCameraStateResponse) ProtoMessage() {}
-
-func (x *ReportCameraStateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_fd_service_proto_msgTypes[27]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use ReportCameraStateResponse.ProtoReflect.Descriptor instead.
-func (*ReportCameraStateResponse) Descriptor() ([]byte, []int) {
-	return file_v1_fd_service_proto_rawDescGZIP(), []int{27}
-}
-
-func (x *ReportCameraStateResponse) GetAcknowledged() bool {
-	if x != nil {
-		return x.Acknowledged
-	}
-	return false
-}
-
-type GetCameraStateRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CameraId      string                 `protobuf:"bytes,1,opt,name=camera_id,json=cameraId,proto3" json:"camera_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetCameraStateRequest) Reset() {
-	*x = GetCameraStateRequest{}
-	mi := &file_v1_fd_service_proto_msgTypes[28]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetCameraStateRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetCameraStateRequest) ProtoMessage() {}
-
-func (x *GetCameraStateRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_fd_service_proto_msgTypes[28]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetCameraStateRequest.ProtoReflect.Descriptor instead.
-func (*GetCameraStateRequest) Descriptor() ([]byte, []int) {
-	return file_v1_fd_service_proto_rawDescGZIP(), []int{28}
-}
-
-func (x *GetCameraStateRequest) GetCameraId() string {
-	if x != nil {
-		return x.CameraId
-	}
-	return ""
-}
-
-type GetCameraStateResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	State         *CameraState           `protobuf:"bytes,1,opt,name=state,proto3" json:"state,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetCameraStateResponse) Reset() {
-	*x = GetCameraStateResponse{}
-	mi := &file_v1_fd_service_proto_msgTypes[29]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetCameraStateResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetCameraStateResponse) ProtoMessage() {}
-
-func (x *GetCameraStateResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_fd_service_proto_msgTypes[29]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetCameraStateResponse.ProtoReflect.Descriptor instead.
-func (*GetCameraStateResponse) Descriptor() ([]byte, []int) {
-	return file_v1_fd_service_proto_rawDescGZIP(), []int{29}
-}
-
-func (x *GetCameraStateResponse) GetState() *CameraState {
-	if x != nil {
-		return x.State
-	}
-	return nil
-}
-
 var File_v1_fd_service_proto protoreflect.FileDescriptor
 
 const file_v1_fd_service_proto_rawDesc = "" +
@@ -2121,15 +1945,7 @@ const file_v1_fd_service_proto_rawDesc = "" +
 	"\rerror_message\x18\x05 \x01(\tR\ferrorMessage\x12#\n" +
 	"\rcurrent_focus\x18\x06 \x01(\x02R\fcurrentFocus\x12\"\n" +
 	"\rupdated_at_ms\x18\a \x01(\x03R\vupdatedAtMs\x12(\n" +
-	"\x06status\x18\b \x01(\x0e2\x10.v1.CameraStatusR\x06status\"A\n" +
-	"\x18ReportCameraStateRequest\x12%\n" +
-	"\x05state\x18\x01 \x01(\v2\x0f.v1.CameraStateR\x05state\"?\n" +
-	"\x19ReportCameraStateResponse\x12\"\n" +
-	"\facknowledged\x18\x01 \x01(\bR\facknowledged\"4\n" +
-	"\x15GetCameraStateRequest\x12\x1b\n" +
-	"\tcamera_id\x18\x01 \x01(\tR\bcameraId\"?\n" +
-	"\x16GetCameraStateResponse\x12%\n" +
-	"\x05state\x18\x01 \x01(\v2\x0f.v1.CameraStateR\x05state*n\n" +
+	"\x06status\x18\b \x01(\x0e2\x10.v1.CameraStatusR\x06status*n\n" +
 	"\vImageFormat\x12\x1c\n" +
 	"\x18IMAGE_FORMAT_UNSPECIFIED\x10\x00\x12\x15\n" +
 	"\x11IMAGE_FORMAT_JPEG\x10\x01\x12\x14\n" +
@@ -2144,7 +1960,7 @@ const file_v1_fd_service_proto_rawDesc = "" +
 	" CONTROL_COMMAND_TYPE_PRESET_GOTO\x10\x05\x12#\n" +
 	"\x1fCONTROL_COMMAND_TYPE_PRESET_SET\x10\x06\x12\x1e\n" +
 	"\x1aCONTROL_COMMAND_TYPE_FOCUS\x10\a\x12\x1c\n" +
-	"\x18CONTROL_COMMAND_TYPE_ARM\x10\b2\x96\b\n" +
+	"\x18CONTROL_COMMAND_TYPE_ARM\x10\b2\xf7\x06\n" +
 	"\tFDService\x12^\n" +
 	"\x15ExecuteCinematography\x12 .v1.ExecuteCinematographyRequest\x1a!.v1.ExecuteCinematographyResponse\"\x00\x12\x93\x01\n" +
 	" StreamCinematographyInstructions\x124.v1.FDServiceStreamCinematographyInstructionsRequest\x1a5.v1.FDServiceStreamCinematographyInstructionsResponse\"\x000\x01\x12C\n" +
@@ -2154,9 +1970,7 @@ const file_v1_fd_service_proto_rawDesc = "" +
 	"\x19StreamPatternMatchResults\x12$.v1.StreamPatternMatchResultsRequest\x1a%.v1.StreamPatternMatchResultsResponse\"\x000\x01\x12O\n" +
 	"\x10CalculateFraming\x12\x1b.v1.CalculateFramingRequest\x1a\x1c.v1.CalculateFramingResponse\"\x00\x12U\n" +
 	"\x12SendControlCommand\x12\x1d.v1.SendControlCommandRequest\x1a\x1e.v1.SendControlCommandResponse\"\x00\x12b\n" +
-	"\x15StreamControlCommands\x12 .v1.StreamControlCommandsRequest\x1a!.v1.StreamControlCommandsResponse\"\x00(\x010\x01\x12R\n" +
-	"\x11ReportCameraState\x12\x1c.v1.ReportCameraStateRequest\x1a\x1d.v1.ReportCameraStateResponse\"\x00\x12I\n" +
-	"\x0eGetCameraState\x12\x19.v1.GetCameraStateRequest\x1a\x1a.v1.GetCameraStateResponse\"\x00BFZDgithub.com/anyfld/vistra-operation-control-room/gen/proto/v1;protov1b\x06proto3"
+	"\x15StreamControlCommands\x12 .v1.StreamControlCommandsRequest\x1a!.v1.StreamControlCommandsResponse\"\x00(\x010\x01BFZDgithub.com/anyfld/vistra-operation-control-room/gen/proto/v1;protov1b\x06proto3"
 
 var (
 	file_v1_fd_service_proto_rawDescOnce sync.Once
@@ -2171,7 +1985,7 @@ func file_v1_fd_service_proto_rawDescGZIP() []byte {
 }
 
 var file_v1_fd_service_proto_enumTypes = make([]protoimpl.EnumInfo, 2)
-var file_v1_fd_service_proto_msgTypes = make([]protoimpl.MessageInfo, 30)
+var file_v1_fd_service_proto_msgTypes = make([]protoimpl.MessageInfo, 26)
 var file_v1_fd_service_proto_goTypes = []any{
 	(ImageFormat)(0),                                          // 0: v1.ImageFormat
 	(ControlCommandType)(0),                                   // 1: v1.ControlCommandType
@@ -2201,40 +2015,36 @@ var file_v1_fd_service_proto_goTypes = []any{
 	(*StreamControlCommandsResponse)(nil),                     // 25: v1.StreamControlCommandsResponse
 	(*StreamControlCommandsStatus)(nil),                       // 26: v1.StreamControlCommandsStatus
 	(*CameraState)(nil),                                       // 27: v1.CameraState
-	(*ReportCameraStateRequest)(nil),                          // 28: v1.ReportCameraStateRequest
-	(*ReportCameraStateResponse)(nil),                         // 29: v1.ReportCameraStateResponse
-	(*GetCameraStateRequest)(nil),                             // 30: v1.GetCameraStateRequest
-	(*GetCameraStateResponse)(nil),                            // 31: v1.GetCameraStateResponse
-	(*CinematographyInstruction)(nil),                         // 32: v1.CinematographyInstruction
-	(*CinematographyResult)(nil),                              // 33: v1.CinematographyResult
-	(*Subject)(nil),                                           // 34: v1.Subject
-	(*BoundingBox)(nil),                                       // 35: v1.BoundingBox
-	(*PTZParameters)(nil),                                     // 36: v1.PTZParameters
-	(ShotType)(0),                                             // 37: v1.ShotType
-	(CameraAngle)(0),                                          // 38: v1.CameraAngle
-	(CameraStatus)(0),                                         // 39: v1.CameraStatus
+	(*CinematographyInstruction)(nil),                         // 28: v1.CinematographyInstruction
+	(*CinematographyResult)(nil),                              // 29: v1.CinematographyResult
+	(*Subject)(nil),                                           // 30: v1.Subject
+	(*BoundingBox)(nil),                                       // 31: v1.BoundingBox
+	(*PTZParameters)(nil),                                     // 32: v1.PTZParameters
+	(ShotType)(0),                                             // 33: v1.ShotType
+	(CameraAngle)(0),                                          // 34: v1.CameraAngle
+	(CameraStatus)(0),                                         // 35: v1.CameraStatus
 }
 var file_v1_fd_service_proto_depIdxs = []int32{
-	32, // 0: v1.ExecuteCinematographyRequest.instruction:type_name -> v1.CinematographyInstruction
-	33, // 1: v1.ExecuteCinematographyResponse.result:type_name -> v1.CinematographyResult
-	32, // 2: v1.FDServiceStreamCinematographyInstructionsResponse.instruction:type_name -> v1.CinematographyInstruction
+	28, // 0: v1.ExecuteCinematographyRequest.instruction:type_name -> v1.CinematographyInstruction
+	29, // 1: v1.ExecuteCinematographyResponse.result:type_name -> v1.CinematographyResult
+	28, // 2: v1.FDServiceStreamCinematographyInstructionsResponse.instruction:type_name -> v1.CinematographyInstruction
 	0,  // 3: v1.ImageData.format:type_name -> v1.ImageFormat
 	6,  // 4: v1.ProcessImageRequest.image:type_name -> v1.ImageData
-	34, // 5: v1.ProcessImageRequest.target_subjects:type_name -> v1.Subject
+	30, // 5: v1.ProcessImageRequest.target_subjects:type_name -> v1.Subject
 	9,  // 6: v1.ProcessImageResponse.detected_subjects:type_name -> v1.DetectedSubject
-	34, // 7: v1.DetectedSubject.subject:type_name -> v1.Subject
-	35, // 8: v1.DetectedSubject.detected_box:type_name -> v1.BoundingBox
-	34, // 9: v1.StartPatternMatchingRequest.target_subjects:type_name -> v1.Subject
+	30, // 7: v1.DetectedSubject.subject:type_name -> v1.Subject
+	31, // 8: v1.DetectedSubject.detected_box:type_name -> v1.BoundingBox
+	30, // 9: v1.StartPatternMatchingRequest.target_subjects:type_name -> v1.Subject
 	9,  // 10: v1.StreamPatternMatchResultsResponse.detected_subjects:type_name -> v1.DetectedSubject
-	36, // 11: v1.CalculateFramingRequest.current_ptz:type_name -> v1.PTZParameters
-	37, // 12: v1.CalculateFramingRequest.target_shot_type:type_name -> v1.ShotType
+	32, // 11: v1.CalculateFramingRequest.current_ptz:type_name -> v1.PTZParameters
+	33, // 12: v1.CalculateFramingRequest.target_shot_type:type_name -> v1.ShotType
 	9,  // 13: v1.CalculateFramingRequest.target_subjects:type_name -> v1.DetectedSubject
-	38, // 14: v1.CalculateFramingRequest.target_angle:type_name -> v1.CameraAngle
-	36, // 15: v1.CalculateFramingResponse.calculated_ptz:type_name -> v1.PTZParameters
+	34, // 14: v1.CalculateFramingRequest.target_angle:type_name -> v1.CameraAngle
+	32, // 15: v1.CalculateFramingResponse.calculated_ptz:type_name -> v1.PTZParameters
 	1,  // 16: v1.ControlCommand.type:type_name -> v1.ControlCommandType
-	36, // 17: v1.ControlCommand.ptz_parameters:type_name -> v1.PTZParameters
+	32, // 17: v1.ControlCommand.ptz_parameters:type_name -> v1.PTZParameters
 	19, // 18: v1.ControlCommand.arm_parameters:type_name -> v1.ArmParameters
-	36, // 19: v1.ControlCommandResult.resulting_ptz:type_name -> v1.PTZParameters
+	32, // 19: v1.ControlCommandResult.resulting_ptz:type_name -> v1.PTZParameters
 	18, // 20: v1.SendControlCommandRequest.command:type_name -> v1.ControlCommand
 	20, // 21: v1.SendControlCommandResponse.result:type_name -> v1.ControlCommandResult
 	24, // 22: v1.StreamControlCommandsRequest.init:type_name -> v1.StreamControlCommandsInit
@@ -2244,37 +2054,31 @@ var file_v1_fd_service_proto_depIdxs = []int32{
 	18, // 26: v1.StreamControlCommandsResponse.command:type_name -> v1.ControlCommand
 	20, // 27: v1.StreamControlCommandsResponse.result:type_name -> v1.ControlCommandResult
 	26, // 28: v1.StreamControlCommandsResponse.status:type_name -> v1.StreamControlCommandsStatus
-	36, // 29: v1.CameraState.current_ptz:type_name -> v1.PTZParameters
-	39, // 30: v1.CameraState.status:type_name -> v1.CameraStatus
-	27, // 31: v1.ReportCameraStateRequest.state:type_name -> v1.CameraState
-	27, // 32: v1.GetCameraStateResponse.state:type_name -> v1.CameraState
-	2,  // 33: v1.FDService.ExecuteCinematography:input_type -> v1.ExecuteCinematographyRequest
-	4,  // 34: v1.FDService.StreamCinematographyInstructions:input_type -> v1.FDServiceStreamCinematographyInstructionsRequest
-	7,  // 35: v1.FDService.ProcessImage:input_type -> v1.ProcessImageRequest
-	10, // 36: v1.FDService.StartPatternMatching:input_type -> v1.StartPatternMatchingRequest
-	12, // 37: v1.FDService.StopPatternMatching:input_type -> v1.StopPatternMatchingRequest
-	14, // 38: v1.FDService.StreamPatternMatchResults:input_type -> v1.StreamPatternMatchResultsRequest
-	16, // 39: v1.FDService.CalculateFraming:input_type -> v1.CalculateFramingRequest
-	21, // 40: v1.FDService.SendControlCommand:input_type -> v1.SendControlCommandRequest
-	23, // 41: v1.FDService.StreamControlCommands:input_type -> v1.StreamControlCommandsRequest
-	28, // 42: v1.FDService.ReportCameraState:input_type -> v1.ReportCameraStateRequest
-	30, // 43: v1.FDService.GetCameraState:input_type -> v1.GetCameraStateRequest
-	3,  // 44: v1.FDService.ExecuteCinematography:output_type -> v1.ExecuteCinematographyResponse
-	5,  // 45: v1.FDService.StreamCinematographyInstructions:output_type -> v1.FDServiceStreamCinematographyInstructionsResponse
-	8,  // 46: v1.FDService.ProcessImage:output_type -> v1.ProcessImageResponse
-	11, // 47: v1.FDService.StartPatternMatching:output_type -> v1.StartPatternMatchingResponse
-	13, // 48: v1.FDService.StopPatternMatching:output_type -> v1.StopPatternMatchingResponse
-	15, // 49: v1.FDService.StreamPatternMatchResults:output_type -> v1.StreamPatternMatchResultsResponse
-	17, // 50: v1.FDService.CalculateFraming:output_type -> v1.CalculateFramingResponse
-	22, // 51: v1.FDService.SendControlCommand:output_type -> v1.SendControlCommandResponse
-	25, // 52: v1.FDService.StreamControlCommands:output_type -> v1.StreamControlCommandsResponse
-	29, // 53: v1.FDService.ReportCameraState:output_type -> v1.ReportCameraStateResponse
-	31, // 54: v1.FDService.GetCameraState:output_type -> v1.GetCameraStateResponse
-	44, // [44:55] is the sub-list for method output_type
-	33, // [33:44] is the sub-list for method input_type
-	33, // [33:33] is the sub-list for extension type_name
-	33, // [33:33] is the sub-list for extension extendee
-	0,  // [0:33] is the sub-list for field type_name
+	32, // 29: v1.CameraState.current_ptz:type_name -> v1.PTZParameters
+	35, // 30: v1.CameraState.status:type_name -> v1.CameraStatus
+	2,  // 31: v1.FDService.ExecuteCinematography:input_type -> v1.ExecuteCinematographyRequest
+	4,  // 32: v1.FDService.StreamCinematographyInstructions:input_type -> v1.FDServiceStreamCinematographyInstructionsRequest
+	7,  // 33: v1.FDService.ProcessImage:input_type -> v1.ProcessImageRequest
+	10, // 34: v1.FDService.StartPatternMatching:input_type -> v1.StartPatternMatchingRequest
+	12, // 35: v1.FDService.StopPatternMatching:input_type -> v1.StopPatternMatchingRequest
+	14, // 36: v1.FDService.StreamPatternMatchResults:input_type -> v1.StreamPatternMatchResultsRequest
+	16, // 37: v1.FDService.CalculateFraming:input_type -> v1.CalculateFramingRequest
+	21, // 38: v1.FDService.SendControlCommand:input_type -> v1.SendControlCommandRequest
+	23, // 39: v1.FDService.StreamControlCommands:input_type -> v1.StreamControlCommandsRequest
+	3,  // 40: v1.FDService.ExecuteCinematography:output_type -> v1.ExecuteCinematographyResponse
+	5,  // 41: v1.FDService.StreamCinematographyInstructions:output_type -> v1.FDServiceStreamCinematographyInstructionsResponse
+	8,  // 42: v1.FDService.ProcessImage:output_type -> v1.ProcessImageResponse
+	11, // 43: v1.FDService.StartPatternMatching:output_type -> v1.StartPatternMatchingResponse
+	13, // 44: v1.FDService.StopPatternMatching:output_type -> v1.StopPatternMatchingResponse
+	15, // 45: v1.FDService.StreamPatternMatchResults:output_type -> v1.StreamPatternMatchResultsResponse
+	17, // 46: v1.FDService.CalculateFraming:output_type -> v1.CalculateFramingResponse
+	22, // 47: v1.FDService.SendControlCommand:output_type -> v1.SendControlCommandResponse
+	25, // 48: v1.FDService.StreamControlCommands:output_type -> v1.StreamControlCommandsResponse
+	40, // [40:49] is the sub-list for method output_type
+	31, // [31:40] is the sub-list for method input_type
+	31, // [31:31] is the sub-list for extension type_name
+	31, // [31:31] is the sub-list for extension extendee
+	0,  // [0:31] is the sub-list for field type_name
 }
 
 func init() { file_v1_fd_service_proto_init() }
@@ -2301,7 +2105,7 @@ func file_v1_fd_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_fd_service_proto_rawDesc), len(file_v1_fd_service_proto_rawDesc)),
 			NumEnums:      2,
-			NumMessages:   30,
+			NumMessages:   26,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
