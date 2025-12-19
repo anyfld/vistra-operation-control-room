@@ -1021,9 +1021,11 @@ type Camera struct {
 	// 最終接続時刻
 	LastSeenAtMs int64 `protobuf:"varint,7,opt,name=last_seen_at_ms,json=lastSeenAtMs,proto3" json:"last_seen_at_ms,omitempty"`
 	// メタデータ
-	Metadata      map[string]string `protobuf:"bytes,8,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Metadata map[string]string `protobuf:"bytes,8,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// 視聴用WebRTC接続名
+	WebrtcConnectionName string `protobuf:"bytes,9,opt,name=webrtc_connection_name,json=webrtcConnectionName,proto3" json:"webrtc_connection_name,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *Camera) Reset() {
@@ -1110,6 +1112,13 @@ func (x *Camera) GetMetadata() map[string]string {
 		return x.Metadata
 	}
 	return nil
+}
+
+func (x *Camera) GetWebrtcConnectionName() string {
+	if x != nil {
+		return x.WebrtcConnectionName
+	}
+	return ""
 }
 
 type ListAllCamerasRequest struct {
@@ -1861,7 +1870,7 @@ const file_v1_cr_service_proto_rawDesc = "" +
 	"intervalMs\"i\n" +
 	"\x1aStreamSystemStatusResponse\x12(\n" +
 	"\x06status\x18\x01 \x01(\v2\x10.v1.SystemStatusR\x06status\x12!\n" +
-	"\ftimestamp_ms\x18\x02 \x01(\x03R\vtimestampMs\"\xea\x02\n" +
+	"\ftimestamp_ms\x18\x02 \x01(\x03R\vtimestampMs\"\xa0\x03\n" +
 	"\x06Camera\x12\x0e\n" +
 	"\x02id\x18\x01 \x01(\tR\x02id\x12\x12\n" +
 	"\x04name\x18\x02 \x01(\tR\x04name\x12\"\n" +
@@ -1872,7 +1881,8 @@ const file_v1_cr_service_proto_rawDesc = "" +
 	"\vcurrent_ptz\x18\x06 \x01(\v2\x11.v1.PTZParametersR\n" +
 	"currentPtz\x12%\n" +
 	"\x0flast_seen_at_ms\x18\a \x01(\x03R\flastSeenAtMs\x124\n" +
-	"\bmetadata\x18\b \x03(\v2\x18.v1.Camera.MetadataEntryR\bmetadata\x1a;\n" +
+	"\bmetadata\x18\b \x03(\v2\x18.v1.Camera.MetadataEntryR\bmetadata\x124\n" +
+	"\x16webrtc_connection_name\x18\t \x01(\tR\x14webrtcConnectionName\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"\xdd\x01\n" +
