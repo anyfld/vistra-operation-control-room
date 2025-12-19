@@ -31,16 +31,17 @@ func (r *CameraRepo) RegisterCamera(req *protov1.RegisterCameraRequest) *protov1
 	defer r.mu.Unlock()
 
 	cameraID := fmt.Sprintf("cam-%d", time.Now().UnixNano())
-	camera := &protov1.Camera{
-		Id:           cameraID,
-		Name:         req.GetName(),
-		Mode:         req.GetMode(),
-		MasterMfId:   req.GetMasterMfId(),
-		Status:       protov1.CameraStatus_CAMERA_STATUS_ONLINE,
-		CurrentPtz:   nil,
-		LastSeenAtMs: time.Now().UnixMilli(),
-		Metadata:     req.GetMetadata(),
-	}
+	camera := new(protov1.Camera)
+	camera.Reset()
+
+	camera.Id = cameraID
+	camera.Name = req.GetName()
+	camera.Mode = req.GetMode()
+	camera.MasterMfId = req.GetMasterMfId()
+	camera.Status = protov1.CameraStatus_CAMERA_STATUS_ONLINE
+	camera.CurrentPtz = nil
+	camera.LastSeenAtMs = time.Now().UnixMilli()
+	camera.Metadata = req.GetMetadata()
 
 	r.cameras[cameraID] = camera
 	if req.GetConnection() != nil {
@@ -160,13 +161,15 @@ func (r *CameraRepo) UpdateHeartbeat(cameraID string, ptz *protov1.PTZParameters
 	}
 
 	camera.LastSeenAtMs = time.Now().UnixMilli()
-	camera.Status = status
+
+	if status != protov1.CameraStatus_CAMERA_STATUS_UNSPECIFIED {
+		camera.Status = status
+		r.connectionStatus[cameraID] = status
+	}
 
 	if ptz != nil {
 		camera.CurrentPtz = ptz
 	}
-
-	r.connectionStatus[cameraID] = status
 
 	return true
 }
@@ -190,6 +193,33 @@ func (r *CameraRepo) GetAllConnectionStatuses() map[string]protov1.CameraStatus 
 	}
 
 	return result
+}
+
+const (
+	heartbeatTimeoutSeconds = 30
+	millisecondsPerSecond   = 1000
+)
+
+func (r *CameraRepo) CheckAndUpdateDisconnectedCameras() {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	now := time.Now().UnixMilli()
+	timeoutMs := int64(heartbeatTimeoutSeconds * millisecondsPerSecond)
+
+	for cameraID, camera := range r.cameras {
+		if camera.GetLastSeenAtMs() == 0 {
+			continue
+		}
+
+		elapsed := now - camera.GetLastSeenAtMs()
+		if elapsed >= timeoutMs {
+			if camera.GetStatus() != protov1.CameraStatus_CAMERA_STATUS_OFFLINE {
+				camera.Status = protov1.CameraStatus_CAMERA_STATUS_OFFLINE
+				r.connectionStatus[cameraID] = protov1.CameraStatus_CAMERA_STATUS_OFFLINE
+			}
+		}
+	}
 }
 
 func (r *CameraRepo) matchesFilters(

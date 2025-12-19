@@ -22,6 +22,7 @@ type CameraInteractor interface {
 	GetConnectionStatus(ctx context.Context, cameraID string) (protov1.CameraStatus, bool, error)
 	GetAllConnectionStatuses(ctx context.Context, cameraIDs []string) (map[string]protov1.CameraStatus, error)
 	GetCameraCapabilities(ctx context.Context, cameraID string) (*protov1.CameraCapabilities, error)
+	CheckAndUpdateDisconnectedCameras(ctx context.Context) error
 }
 
 type CameraUsecase struct {
@@ -96,11 +97,16 @@ func (u *CameraUsecase) Heartbeat(
 	ctx context.Context,
 	req *protov1.HeartbeatRequest,
 ) (bool, error) {
-	return u.repo.UpdateHeartbeat(
+	success := u.repo.UpdateHeartbeat(
 		req.GetCameraId(),
 		req.GetCurrentPtz(),
 		req.GetStatus(),
-	), nil
+	)
+	if !success {
+		return false, errors.New("camera not found")
+	}
+
+	return true, nil
 }
 
 func (u *CameraUsecase) GetConnectionStatus(
@@ -136,4 +142,10 @@ func (u *CameraUsecase) GetCameraCapabilities(
 	cameraID string,
 ) (*protov1.CameraCapabilities, error) {
 	return u.repo.GetCapabilities(cameraID), nil
+}
+
+func (u *CameraUsecase) CheckAndUpdateDisconnectedCameras(ctx context.Context) error {
+	u.repo.CheckAndUpdateDisconnectedCameras()
+
+	return nil
 }

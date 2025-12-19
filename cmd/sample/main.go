@@ -36,12 +36,14 @@ func main() {
 		resp, err := client.RegisterCamera(ctx, connect.NewRequest(req))
 		if err != nil {
 			fmt.Fprintf(os.Stderr, "Error: failed to register camera %d: %v\n", i+1, err)
+
 			continue
 		}
 
 		camera := resp.Msg.GetCamera()
 		if camera == nil {
 			fmt.Fprintf(os.Stderr, "Error: camera %d registration returned nil\n", i+1)
+
 			continue
 		}
 

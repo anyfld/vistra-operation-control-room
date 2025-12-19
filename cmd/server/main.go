@@ -23,8 +23,9 @@ import (
 )
 
 const (
-	readHeaderTimeout = 10 * time.Second
-	shutdownTimeout   = 30 * time.Second
+	readHeaderTimeout            = 10 * time.Second
+	shutdownTimeout              = 30 * time.Second
+	cameraHeartbeatCheckInterval = 5 * time.Second
 )
 
 type ExampleServiceHandler struct{}
@@ -83,6 +84,22 @@ func registerCameraService(mux *http.ServeMux) {
 	if path, h := protov1connect.NewCameraServiceHandler(handlers.NewCameraHandler(cameraUC)); path != "" {
 		mux.Handle(path, h)
 	}
+
+	startCameraHeartbeatChecker(cameraUC)
+}
+
+func startCameraHeartbeatChecker(cameraUC usecase.CameraInteractor) {
+	go func() {
+		ticker := time.NewTicker(cameraHeartbeatCheckInterval)
+		defer ticker.Stop()
+
+		ctx := context.Background()
+		for range ticker.C {
+			if err := cameraUC.CheckAndUpdateDisconnectedCameras(ctx); err != nil {
+				log.Printf("Error checking disconnected cameras: %v", err)
+			}
+		}
+	}()
 }
 
 func registerCRService(mux *http.ServeMux) {

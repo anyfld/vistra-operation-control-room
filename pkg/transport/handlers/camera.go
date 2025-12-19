@@ -156,7 +156,10 @@ func (h *CameraHandler) Heartbeat(
 ) (*connect.Response[protov1.HeartbeatResponse], error) {
 	success, err := h.uc.Heartbeat(ctx, req.Msg)
 	if err != nil {
-		return nil, err
+		return nil, connect.NewError(
+			connect.CodeNotFound,
+			errors.New("camera not found"),
+		)
 	}
 
 	return connect.NewResponse(&protov1.HeartbeatResponse{
