@@ -237,19 +237,19 @@ func (h *FDHandler) StreamControlCommands(
 				}), nil
 			}
 
-			if event.Command != nil {
+			if event.Result != nil {
 				return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-					Message: &protov1.StreamControlCommandsResponse_Command{
-						Command: event.Command,
+					Message: &protov1.StreamControlCommandsResponse_Result{
+						Result: event.Result,
 					},
 					TimestampMs: event.TimestampMs,
 				}), nil
 			}
 
-			if event.Result != nil {
+			if event.Command != nil {
 				return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-					Message: &protov1.StreamControlCommandsResponse_Result{
-						Result: event.Result,
+					Message: &protov1.StreamControlCommandsResponse_Command{
+						Command: event.Command,
 					},
 					TimestampMs: event.TimestampMs,
 				}), nil

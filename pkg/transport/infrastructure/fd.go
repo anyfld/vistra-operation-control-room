@@ -35,6 +35,7 @@ type FDRepo struct {
 	controlCommands            map[string]*protov1.ControlCommand
 	cameraStates               map[string]*protov1.CameraState
 	cinematographyInstructions map[string]*protov1.CinematographyInstruction
+	lastPTZEvents              map[string]*PTZCommandEvent
 	ptzSubscribers             map[string][]chan *PTZCommandEvent
 	ptzSubscribersMu           sync.RWMutex
 }
@@ -54,6 +55,7 @@ func NewFDRepo() *FDRepo {
 		controlCommands:            make(map[string]*protov1.ControlCommand),
 		cameraStates:               make(map[string]*protov1.CameraState),
 		cinematographyInstructions: make(map[string]*protov1.CinematographyInstruction),
+		lastPTZEvents:              make(map[string]*PTZCommandEvent),
 		ptzSubscribers:             make(map[string][]chan *PTZCommandEvent),
 		ptzSubscribersMu:           sync.RWMutex{},
 	}
@@ -188,27 +190,39 @@ func (r *FDRepo) SendControlCommand(command *protov1.ControlCommand) *protov1.Co
 		ExecutionTimeMs: executionTimeMs,
 	}
 
-	r.mu.Unlock()
-
 	cameraID := command.GetCameraId()
 	if cameraID != "" {
-		event := &PTZCommandEvent{
+		r.lastPTZEvents[cameraID] = &PTZCommandEvent{
 			Command:     command,
 			Result:      result,
 			TimestampMs: time.Now().UnixMilli(),
 		}
-		r.publishPTZCommand(cameraID, event)
+	}
+
+	r.mu.Unlock()
+
+	if cameraID != "" {
+		r.publishPTZCommand(cameraID, r.lastPTZEvents[cameraID])
 	}
 
 	return result
 }
 
 func (r *FDRepo) SubscribePTZCommands(cameraID string) <-chan *PTZCommandEvent {
-	r.ptzSubscribersMu.Lock()
-	defer r.ptzSubscribersMu.Unlock()
-
 	ch := make(chan *PTZCommandEvent, 100)
+
+	r.ptzSubscribersMu.Lock()
 	r.ptzSubscribers[cameraID] = append(r.ptzSubscribers[cameraID], ch)
+	r.ptzSubscribersMu.Unlock()
+
+	r.mu.RLock()
+	if event, ok := r.lastPTZEvents[cameraID]; ok && event != nil {
+		select {
+		case ch <- event:
+		default:
+		}
+	}
+	r.mu.RUnlock()
 
 	return ch
 }
