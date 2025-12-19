@@ -37,9 +37,18 @@ type FDInteractor interface {
 		ctx context.Context,
 		command *protov1.ControlCommand,
 	) (*protov1.ControlCommandResult, error)
-	GetControlCommand(ctx context.Context, cameraID string) (*protov1.ControlCommand, error)
-	ReportCameraState(ctx context.Context, state *protov1.CameraState) (bool, error)
-	GetCameraState(ctx context.Context, cameraID string) (*protov1.CameraState, error)
+	GetControlCommand(
+		ctx context.Context,
+		cameraID string,
+	) (*protov1.ControlCommand, error)
+	ReportCameraState(
+		ctx context.Context,
+		state *protov1.CameraState,
+	) (bool, error)
+	GetCameraState(
+		ctx context.Context,
+		cameraID string,
+	) (*protov1.CameraState, error)
 }
 
 type FDUsecase struct {

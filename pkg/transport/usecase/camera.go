@@ -11,7 +11,10 @@ type CameraInteractor interface {
 	RegisterCamera(ctx context.Context, req *protov1.RegisterCameraRequest) (*protov1.Camera, error)
 	UnregisterCamera(ctx context.Context, cameraID string) (bool, error)
 	UpdateCamera(ctx context.Context, req *protov1.UpdateCameraRequest) (*protov1.Camera, error)
-	GetCamera(ctx context.Context, cameraID string) (*protov1.Camera, *protov1.CameraConnection, *protov1.CameraCapabilities, error)
+	GetCamera(
+		ctx context.Context,
+		cameraID string,
+	) (*protov1.Camera, *protov1.CameraConnection, *protov1.CameraCapabilities, error)
 	ListCameras(ctx context.Context, req *protov1.ListCamerasRequest) ([]*protov1.Camera, error)
 	SwitchCameraMode(ctx context.Context, cameraID string, mode protov1.CameraMode) (bool, error)
 	Heartbeat(ctx context.Context, req *protov1.HeartbeatRequest) (bool, error)

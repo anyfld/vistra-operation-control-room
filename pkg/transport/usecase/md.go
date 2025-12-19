@@ -12,7 +12,10 @@ type MDInteractor interface {
 		ctx context.Context,
 		req *protov1.ReceiveCinematographyInstructionRequest,
 	) (*protov1.ReceiveCinematographyInstructionResponse, error)
-	GetCinematographyInstruction(ctx context.Context, cameraID string) (*protov1.CinematographyInstruction, error)
+	GetCinematographyInstruction(
+		ctx context.Context,
+		cameraID string,
+	) (*protov1.CinematographyInstruction, error)
 	ConfigureVideoOutput(
 		ctx context.Context,
 		config *protov1.VideoOutputConfig,
@@ -30,7 +33,11 @@ type MDInteractor interface {
 		newSourceCameraID string,
 	) (bool, error)
 	GetStreamingStatus(ctx context.Context, outputID string) ([]*protov1.VideoOutput, error)
-	CreateLLMRequest(ctx context.Context, prompt string, context *protov1.LLMContext) (string, error)
+	CreateLLMRequest(
+		ctx context.Context,
+		prompt string,
+		context *protov1.LLMContext,
+	) (string, error)
 	GetLLMRequest(ctx context.Context, requestID string) (string, *protov1.LLMContext, error)
 }
 
