@@ -90,7 +90,7 @@ type MDServiceClient interface {
 	StreamStreamingEvents(context.Context, *connect.Request[v1.StreamStreamingEventsRequest]) (*connect.ServerStreamForClient[v1.StreamStreamingEventsResponse], error)
 	// LLM連携
 	SendToLLM(context.Context, *connect.Request[v1.SendToLLMRequest]) (*connect.Response[v1.SendToLLMResponse], error)
-	ReceiveFromLLM(context.Context, *connect.Request[v1.ReceiveFromLLMRequest]) (*connect.ServerStreamForClient[v1.ReceiveFromLLMResponse], error)
+	ReceiveFromLLM(context.Context, *connect.Request[v1.ReceiveFromLLMRequest]) (*connect.Response[v1.ReceiveFromLLMResponse], error)
 }
 
 // NewMDServiceClient constructs a client for the v1.MDService service. By default, it uses the
@@ -263,8 +263,8 @@ func (c *mDServiceClient) SendToLLM(ctx context.Context, req *connect.Request[v1
 }
 
 // ReceiveFromLLM calls v1.MDService.ReceiveFromLLM.
-func (c *mDServiceClient) ReceiveFromLLM(ctx context.Context, req *connect.Request[v1.ReceiveFromLLMRequest]) (*connect.ServerStreamForClient[v1.ReceiveFromLLMResponse], error) {
-	return c.receiveFromLLM.CallServerStream(ctx, req)
+func (c *mDServiceClient) ReceiveFromLLM(ctx context.Context, req *connect.Request[v1.ReceiveFromLLMRequest]) (*connect.Response[v1.ReceiveFromLLMResponse], error) {
+	return c.receiveFromLLM.CallUnary(ctx, req)
 }
 
 // MDServiceHandler is an implementation of the v1.MDService service.
@@ -287,7 +287,7 @@ type MDServiceHandler interface {
 	StreamStreamingEvents(context.Context, *connect.Request[v1.StreamStreamingEventsRequest], *connect.ServerStream[v1.StreamStreamingEventsResponse]) error
 	// LLM連携
 	SendToLLM(context.Context, *connect.Request[v1.SendToLLMRequest]) (*connect.Response[v1.SendToLLMResponse], error)
-	ReceiveFromLLM(context.Context, *connect.Request[v1.ReceiveFromLLMRequest], *connect.ServerStream[v1.ReceiveFromLLMResponse]) error
+	ReceiveFromLLM(context.Context, *connect.Request[v1.ReceiveFromLLMRequest]) (*connect.Response[v1.ReceiveFromLLMResponse], error)
 }
 
 // NewMDServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -369,7 +369,7 @@ func NewMDServiceHandler(svc MDServiceHandler, opts ...connect.HandlerOption) (s
 		connect.WithSchema(mDServiceMethods.ByName("SendToLLM")),
 		connect.WithHandlerOptions(opts...),
 	)
-	mDServiceReceiveFromLLMHandler := connect.NewServerStreamHandler(
+	mDServiceReceiveFromLLMHandler := connect.NewUnaryHandler(
 		MDServiceReceiveFromLLMProcedure,
 		svc.ReceiveFromLLM,
 		connect.WithSchema(mDServiceMethods.ByName("ReceiveFromLLM")),
@@ -460,6 +460,6 @@ func (UnimplementedMDServiceHandler) SendToLLM(context.Context, *connect.Request
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.MDService.SendToLLM is not implemented"))
 }
 
-func (UnimplementedMDServiceHandler) ReceiveFromLLM(context.Context, *connect.Request[v1.ReceiveFromLLMRequest], *connect.ServerStream[v1.ReceiveFromLLMResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("v1.MDService.ReceiveFromLLM is not implemented"))
+func (UnimplementedMDServiceHandler) ReceiveFromLLM(context.Context, *connect.Request[v1.ReceiveFromLLMRequest]) (*connect.Response[v1.ReceiveFromLLMResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.MDService.ReceiveFromLLM is not implemented"))
 }
