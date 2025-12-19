@@ -242,11 +242,9 @@ func (h *FDHandler) StreamControlCommands(
 				)
 
 				return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-					Message: &protov1.StreamControlCommandsResponse_Status{
-						Status: &protov1.StreamControlCommandsStatus{
-							Connected: false,
-							Message:   fmt.Sprintf("subscription closed for camera: %s", cameraID),
-						},
+					Status: &protov1.StreamControlCommandsStatus{
+						Connected: false,
+						Message:   fmt.Sprintf("subscription closed for camera: %s", cameraID),
 					},
 					TimestampMs: time.Now().UnixMilli(),
 				}), nil
@@ -260,8 +258,10 @@ func (h *FDHandler) StreamControlCommands(
 				)
 
 				return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-					Message: &protov1.StreamControlCommandsResponse_Result{
-						Result: event.Result,
+					Result: event.Result,
+					Status: &protov1.StreamControlCommandsStatus{
+						Connected: true,
+						Message:   "command result event",
 					},
 					TimestampMs: event.TimestampMs,
 				}), nil
@@ -275,8 +275,10 @@ func (h *FDHandler) StreamControlCommands(
 				)
 
 				return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-					Message: &protov1.StreamControlCommandsResponse_Command{
-						Command: event.Command,
+					Command: event.Command,
+					Status: &protov1.StreamControlCommandsStatus{
+						Connected: true,
+						Message:   "command event",
 					},
 					TimestampMs: event.TimestampMs,
 				}), nil
@@ -288,21 +290,17 @@ func (h *FDHandler) StreamControlCommands(
 			)
 
 			return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-				Message: &protov1.StreamControlCommandsResponse_Status{
-					Status: &protov1.StreamControlCommandsStatus{
-						Connected: true,
-						Message:   fmt.Sprintf("no PTZ command payload for camera: %s", cameraID),
-					},
+				Status: &protov1.StreamControlCommandsStatus{
+					Connected: true,
+					Message:   fmt.Sprintf("no PTZ command payload for camera: %s", cameraID),
 				},
 				TimestampMs: time.Now().UnixMilli(),
 			}), nil
 		case <-time.After(fdPollingIntervalMs * time.Millisecond):
 			return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-				Message: &protov1.StreamControlCommandsResponse_Status{
-					Status: &protov1.StreamControlCommandsStatus{
-						Connected: true,
-						Message:   fmt.Sprintf("no new PTZ events for camera: %s", cameraID),
-					},
+				Status: &protov1.StreamControlCommandsStatus{
+					Connected: true,
+					Message:   fmt.Sprintf("no new PTZ events for camera: %s", cameraID),
 				},
 				TimestampMs: time.Now().UnixMilli(),
 			}), nil
@@ -325,8 +323,10 @@ func (h *FDHandler) StreamControlCommands(
 		}
 
 		return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-			Message: &protov1.StreamControlCommandsResponse_Result{
-				Result: result,
+			Result: result,
+			Status: &protov1.StreamControlCommandsStatus{
+				Connected: true,
+				Message:   "command accepted",
 			},
 			TimestampMs: time.Now().UnixMilli(),
 		}), nil
@@ -336,11 +336,9 @@ func (h *FDHandler) StreamControlCommands(
 		log.Printf("fd stream control commands result received")
 
 		return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-			Message: &protov1.StreamControlCommandsResponse_Status{
-				Status: &protov1.StreamControlCommandsStatus{
-					Connected: true,
-					Message:   "command result received",
-				},
+			Status: &protov1.StreamControlCommandsStatus{
+				Connected: true,
+				Message:   "command result received",
 			},
 			TimestampMs: time.Now().UnixMilli(),
 		}), nil
@@ -394,22 +392,18 @@ func (h *FDHandler) StreamControlCommands(
 		}
 
 		return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-			Message: &protov1.StreamControlCommandsResponse_Status{
-				Status: &protov1.StreamControlCommandsStatus{
-					Connected: true,
-					Message:   "camera state updated",
-				},
+			Status: &protov1.StreamControlCommandsStatus{
+				Connected: true,
+				Message:   "camera state updated",
 			},
 			TimestampMs: time.Now().UnixMilli(),
 		}), nil
 	}
 
 	return connect.NewResponse(&protov1.StreamControlCommandsResponse{
-		Message: &protov1.StreamControlCommandsResponse_Status{
-			Status: &protov1.StreamControlCommandsStatus{
-				Connected: true,
-				Message:   "no operation",
-			},
+		Status: &protov1.StreamControlCommandsStatus{
+			Connected: true,
+			Message:   "no operation",
 		},
 		TimestampMs: time.Now().UnixMilli(),
 	}), nil
