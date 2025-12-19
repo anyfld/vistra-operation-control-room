@@ -16,13 +16,15 @@ import (
 
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
 	"github.com/anyfld/vistra-operation-control-room/gen/proto/v1/protov1connect"
+	"github.com/anyfld/vistra-operation-control-room/pkg/transport/infrastructure"
 )
 
 func newFDTestServer(t *testing.T) (*httptest.Server, protov1connect.FDServiceClient) {
 	t.Helper()
 
+	cameraRepo := infrastructure.NewCameraRepo()
 	mux := http.NewServeMux()
-	registerFDService(mux)
+	registerFDService(mux, cameraRepo)
 
 	handler := h2c.NewHandler(mux, &http2.Server{})
 	server := httptest.NewUnstartedServer(handler)
@@ -113,9 +115,9 @@ func TestStreamControlCommands_PTZPubSub(t *testing.T) {
 			require.Equal(t, cameraID, cmd.GetCameraId())
 			require.Equal(t, protov1.ControlCommandType_CONTROL_COMMAND_TYPE_PTZ_ABSOLUTE, cmd.GetType())
 			require.NotNil(t, cmd.GetPtzParameters())
-			require.Equal(t, float32(10), cmd.GetPtzParameters().GetPan())
-			require.Equal(t, float32(5), cmd.GetPtzParameters().GetTilt())
-			require.Equal(t, float32(2), cmd.GetPtzParameters().GetZoom())
+			require.InDelta(t, float64(10), float64(cmd.GetPtzParameters().GetPan()), 0.01)
+			require.InDelta(t, float64(5), float64(cmd.GetPtzParameters().GetTilt()), 0.01)
+			require.InDelta(t, float64(2), float64(cmd.GetPtzParameters().GetZoom()), 0.01)
 		}
 
 		if res := pollResp.Msg.GetResult(); res != nil {

@@ -21,6 +21,7 @@ const (
 	ptzSpeed              = 0.5
 	estimatedMoveTimeMs   = 1000
 	executionTimeMs       = 100
+	ptzChannelBufferSize  = 100
 )
 
 type PTZCommandEvent struct {
@@ -209,31 +210,31 @@ func (r *FDRepo) SendControlCommand(command *protov1.ControlCommand) *protov1.Co
 }
 
 func (r *FDRepo) SubscribePTZCommands(cameraID string) <-chan *PTZCommandEvent {
-	ch := make(chan *PTZCommandEvent, 100)
+	commandCh := make(chan *PTZCommandEvent, ptzChannelBufferSize)
 
 	r.ptzSubscribersMu.Lock()
-	r.ptzSubscribers[cameraID] = append(r.ptzSubscribers[cameraID], ch)
+	r.ptzSubscribers[cameraID] = append(r.ptzSubscribers[cameraID], commandCh)
 	r.ptzSubscribersMu.Unlock()
 
 	r.mu.RLock()
 	if event, ok := r.lastPTZEvents[cameraID]; ok && event != nil {
 		select {
-		case ch <- event:
+		case commandCh <- event:
 		default:
 		}
 	}
 	r.mu.RUnlock()
 
-	return ch
+	return commandCh
 }
 
-func (r *FDRepo) UnsubscribePTZCommands(cameraID string, ch <-chan *PTZCommandEvent) {
+func (r *FDRepo) UnsubscribePTZCommands(cameraID string, commandCh <-chan *PTZCommandEvent) {
 	r.ptzSubscribersMu.Lock()
 	defer r.ptzSubscribersMu.Unlock()
 
 	subscribers := r.ptzSubscribers[cameraID]
 	for i, subscriber := range subscribers {
-		if subscriber == ch {
+		if subscriber == commandCh {
 			r.ptzSubscribers[cameraID] = append(subscribers[:i], subscribers[i+1:]...)
 
 			close(subscriber)
@@ -244,19 +245,6 @@ func (r *FDRepo) UnsubscribePTZCommands(cameraID string, ch <-chan *PTZCommandEv
 
 	if len(r.ptzSubscribers[cameraID]) == 0 {
 		delete(r.ptzSubscribers, cameraID)
-	}
-}
-
-func (r *FDRepo) publishPTZCommand(cameraID string, event *PTZCommandEvent) {
-	r.ptzSubscribersMu.RLock()
-	defer r.ptzSubscribersMu.RUnlock()
-
-	subscribers := r.ptzSubscribers[cameraID]
-	for _, ch := range subscribers {
-		select {
-		case ch <- event:
-		default:
-		}
 	}
 }
 
@@ -336,4 +324,17 @@ func (r *FDRepo) GetCinematographyInstruction(sourceFilter []string) *protov1.Ci
 	}
 
 	return nil
+}
+
+func (r *FDRepo) publishPTZCommand(cameraID string, event *PTZCommandEvent) {
+	r.ptzSubscribersMu.RLock()
+	defer r.ptzSubscribersMu.RUnlock()
+
+	subscribers := r.ptzSubscribers[cameraID]
+	for _, commandCh := range subscribers {
+		select {
+		case commandCh <- event:
+		default:
+		}
+	}
 }

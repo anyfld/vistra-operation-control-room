@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
-	"sync"
 	"syscall"
 	"time"
 
@@ -28,19 +27,6 @@ const (
 	shutdownTimeout   = 30 * time.Second
 )
 
-var (
-	sharedCameraRepo     *infrastructure.CameraRepo
-	sharedCameraRepoOnce sync.Once
-)
-
-func getSharedCameraRepo() *infrastructure.CameraRepo {
-	sharedCameraRepoOnce.Do(func() {
-		sharedCameraRepo = infrastructure.NewCameraRepo()
-	})
-
-	return sharedCameraRepo
-}
-
 type ExampleServiceHandler struct{}
 
 func (h *ExampleServiceHandler) Ping(
@@ -53,7 +39,8 @@ func (h *ExampleServiceHandler) Ping(
 }
 
 func main() {
-	mux := setupHandlers()
+	cameraRepo := infrastructure.NewCameraRepo()
+	mux := setupHandlers(cameraRepo)
 	addr := getServerAddress()
 	server := createServer(addr, mux)
 
@@ -66,7 +53,7 @@ func main() {
 	}
 }
 
-func setupHandlers() *http.ServeMux {
+func setupHandlers(cameraRepo *infrastructure.CameraRepo) *http.ServeMux {
 	mux := http.NewServeMux()
 
 	handler := &ExampleServiceHandler{}
@@ -74,9 +61,9 @@ func setupHandlers() *http.ServeMux {
 	mux.Handle(path, httpHandler)
 
 	registerMDService(mux)
-	registerCameraService(mux)
+	registerCameraService(mux, cameraRepo)
 	registerCRService(mux)
-	registerFDService(mux)
+	registerFDService(mux, cameraRepo)
 	registerPTZService(mux)
 
 	return mux
@@ -91,9 +78,7 @@ func registerMDService(mux *http.ServeMux) {
 	}
 }
 
-func registerCameraService(mux *http.ServeMux) {
-	cameraRepo := getSharedCameraRepo()
-
+func registerCameraService(mux *http.ServeMux, cameraRepo *infrastructure.CameraRepo) {
 	cameraUC := usecase.NewCameraUsecase(cameraRepo)
 	if path, h := protov1connect.NewCameraServiceHandler(handlers.NewCameraHandler(cameraUC)); path != "" {
 		mux.Handle(path, h)
@@ -106,9 +91,8 @@ func registerCRService(mux *http.ServeMux) {
 	}
 }
 
-func registerFDService(mux *http.ServeMux) {
+func registerFDService(mux *http.ServeMux, cameraRepo *infrastructure.CameraRepo) {
 	fdRepo := infrastructure.NewFDRepo()
-	cameraRepo := getSharedCameraRepo()
 
 	fdUC := usecase.NewFDUsecase(fdRepo)
 	cameraUC := usecase.NewCameraUsecase(cameraRepo)

@@ -8,6 +8,7 @@ import (
 	"time"
 
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
+	"github.com/anyfld/vistra-operation-control-room/pkg/transport/infrastructure"
 	"github.com/anyfld/vistra-operation-control-room/pkg/transport/usecase"
 	"google.golang.org/protobuf/encoding/protojson"
 )
@@ -47,7 +48,7 @@ func (h *FDHandler) ReportCameraStateHTTP() http.Handler {
 			return
 		}
 
-		state := &protov1.CameraState{}
+		state := &protov1.CameraState{} //nolint:exhaustruct
 		if err := protojson.Unmarshal(body, state); err != nil {
 			http.Error(writer, "invalid request body", http.StatusBadRequest)
 
@@ -107,7 +108,7 @@ func (h *FDHandler) SendControlCommandHTTP() http.Handler {
 			return
 		}
 
-		command := &protov1.ControlCommand{}
+		command := &protov1.ControlCommand{} //nolint:exhaustruct
 		if err := protojson.Unmarshal(body, command); err != nil {
 			http.Error(writer, "invalid request body", http.StatusBadRequest)
 
@@ -129,7 +130,7 @@ func (h *FDHandler) SendControlCommandHTTP() http.Handler {
 
 		writer.Header().Set("Content-Type", "application/json")
 
-		encoded, err := protojson.MarshalOptions{
+		encoded, err := protojson.MarshalOptions{ //nolint:exhaustruct
 			UseProtoNames: true,
 		}.Marshal(result)
 		if err != nil {
@@ -154,32 +155,12 @@ func (h *FDHandler) PollControlCommandsHTTP() http.Handler {
 	fallback := NewFDFallbackHandler(h.uc, h.cameraUC)
 
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
-		if request.Method != http.MethodGet {
-			http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
-
+		if !h.validatePollRequest(writer, request) {
 			return
 		}
 
 		cameraID := request.URL.Query().Get("camera_id")
-		if cameraID == "" {
-			http.Error(writer, "camera_id is required", http.StatusBadRequest)
-
-			return
-		}
-
-		timeoutMsParam := request.URL.Query().Get("timeout_ms")
-		timeoutMs := 30000
-
-		if timeoutMsParam != "" {
-			value, err := strconv.Atoi(timeoutMsParam)
-			if err != nil || value <= 0 {
-				http.Error(writer, "invalid timeout_ms", http.StatusBadRequest)
-
-				return
-			}
-
-			timeoutMs = value
-		}
+		timeoutMs := h.parseTimeoutMs(request)
 
 		ctx := request.Context()
 
@@ -197,38 +178,88 @@ func (h *FDHandler) PollControlCommandsHTTP() http.Handler {
 			}
 		}()
 
-		timeout := time.NewTimer(time.Duration(timeoutMs) * time.Millisecond)
-		defer timeout.Stop()
+		h.handlePollResponse(writer, request, commandCh, timeoutMs)
+	})
+}
 
-		select {
-		case <-request.Context().Done():
-			http.Error(writer, "request cancelled", http.StatusRequestTimeout)
+func (h *FDHandler) validatePollRequest(
+	writer http.ResponseWriter,
+	request *http.Request,
+) bool {
+	if request.Method != http.MethodGet {
+		http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
 
-			return
-		case <-timeout.C:
+		return false
+	}
+
+	cameraID := request.URL.Query().Get("camera_id")
+	if cameraID == "" {
+		http.Error(writer, "camera_id is required", http.StatusBadRequest)
+
+		return false
+	}
+
+	return true
+}
+
+func (h *FDHandler) parseTimeoutMs(request *http.Request) int {
+	const defaultTimeoutMs = 30000
+
+	timeoutMsParam := request.URL.Query().Get("timeout_ms")
+	if timeoutMsParam == "" {
+		return defaultTimeoutMs
+	}
+
+	value, err := strconv.Atoi(timeoutMsParam)
+	if err != nil || value <= 0 {
+		return defaultTimeoutMs
+	}
+
+	return value
+}
+
+func (h *FDHandler) handlePollResponse(
+	writer http.ResponseWriter,
+	request *http.Request,
+	commandCh <-chan *infrastructure.PTZCommandEvent,
+	timeoutMs int,
+) {
+	timeout := time.NewTimer(time.Duration(timeoutMs) * time.Millisecond)
+	defer timeout.Stop()
+
+	select {
+	case <-request.Context().Done():
+		http.Error(writer, "request cancelled", http.StatusRequestTimeout)
+
+		return
+	case <-timeout.C:
+		writer.WriteHeader(http.StatusNoContent)
+
+		return
+	case event, ok := <-commandCh:
+		if !ok || event == nil || (event.Command == nil && event.Result == nil) {
 			writer.WriteHeader(http.StatusNoContent)
 
 			return
-		case event, ok := <-commandCh:
-			if !ok || event == nil || (event.Command == nil && event.Result == nil) {
-				writer.WriteHeader(http.StatusNoContent)
-
-				return
-			}
-
-			response := &pollControlCommandsResponse{
-				Command:     event.Command,
-				Result:      event.Result,
-				TimestampMs: event.TimestampMs,
-			}
-
-			writer.Header().Set("Content-Type", "application/json")
-
-			if err := json.NewEncoder(writer).Encode(response); err != nil {
-				http.Error(writer, "failed to write response", http.StatusInternalServerError)
-
-				return
-			}
 		}
-	})
+
+		h.writePollResponse(writer, event)
+	}
+}
+
+func (h *FDHandler) writePollResponse(
+	writer http.ResponseWriter,
+	event *infrastructure.PTZCommandEvent,
+) {
+	response := &pollControlCommandsResponse{
+		Command:     event.Command,
+		Result:      event.Result,
+		TimestampMs: event.TimestampMs,
+	}
+
+	writer.Header().Set("Content-Type", "application/json")
+
+	if err := json.NewEncoder(writer).Encode(response); err != nil {
+		http.Error(writer, "failed to write response", http.StatusInternalServerError)
+	}
 }

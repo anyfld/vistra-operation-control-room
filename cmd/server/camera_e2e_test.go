@@ -16,6 +16,7 @@ import (
 
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
 	"github.com/anyfld/vistra-operation-control-room/gen/proto/v1/protov1connect"
+	"github.com/anyfld/vistra-operation-control-room/pkg/transport/infrastructure"
 )
 
 func newCameraTestServer(
@@ -23,8 +24,9 @@ func newCameraTestServer(
 ) (*httptest.Server, protov1connect.CameraServiceClient) {
 	t.Helper()
 
+	cameraRepo := infrastructure.NewCameraRepo()
 	mux := http.NewServeMux()
-	registerCameraService(mux)
+	registerCameraService(mux, cameraRepo)
 
 	handler := h2c.NewHandler(mux, &http2.Server{})
 	server := httptest.NewUnstartedServer(handler)
@@ -140,35 +142,41 @@ func TestRegisterAndGetCameraE2E(t *testing.T) {
 		registerReq.GetCapabilities().GetSupportsPtz(),
 		getResp.Msg.GetCapabilities().GetSupportsPtz(),
 	)
-	require.Equal(
+	require.InDelta(
 		t,
-		registerReq.GetCapabilities().GetPanMin(),
-		getResp.Msg.GetCapabilities().GetPanMin(),
+		float64(registerReq.GetCapabilities().GetPanMin()),
+		float64(getResp.Msg.GetCapabilities().GetPanMin()),
+		0.01,
 	)
-	require.Equal(
+	require.InDelta(
 		t,
-		registerReq.GetCapabilities().GetPanMax(),
-		getResp.Msg.GetCapabilities().GetPanMax(),
+		float64(registerReq.GetCapabilities().GetPanMax()),
+		float64(getResp.Msg.GetCapabilities().GetPanMax()),
+		0.01,
 	)
-	require.Equal(
+	require.InDelta(
 		t,
-		registerReq.GetCapabilities().GetTiltMin(),
-		getResp.Msg.GetCapabilities().GetTiltMin(),
+		float64(registerReq.GetCapabilities().GetTiltMin()),
+		float64(getResp.Msg.GetCapabilities().GetTiltMin()),
+		0.01,
 	)
-	require.Equal(
+	require.InDelta(
 		t,
-		registerReq.GetCapabilities().GetTiltMax(),
-		getResp.Msg.GetCapabilities().GetTiltMax(),
+		float64(registerReq.GetCapabilities().GetTiltMax()),
+		float64(getResp.Msg.GetCapabilities().GetTiltMax()),
+		0.01,
 	)
-	require.Equal(
+	require.InDelta(
 		t,
-		registerReq.GetCapabilities().GetZoomMin(),
-		getResp.Msg.GetCapabilities().GetZoomMin(),
+		float64(registerReq.GetCapabilities().GetZoomMin()),
+		float64(getResp.Msg.GetCapabilities().GetZoomMin()),
+		0.01,
 	)
-	require.Equal(
+	require.InDelta(
 		t,
-		registerReq.GetCapabilities().GetZoomMax(),
-		getResp.Msg.GetCapabilities().GetZoomMax(),
+		float64(registerReq.GetCapabilities().GetZoomMax()),
+		float64(getResp.Msg.GetCapabilities().GetZoomMax()),
+		0.01,
 	)
 
 	listResp, err := client.ListCameras(

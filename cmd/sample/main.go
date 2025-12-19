@@ -447,7 +447,7 @@ func buildPTZScenario(
 	if zoomRange <= 0 {
 		zoomRange = defaultZoomMax - defaultZoomMin
 		zoomMin = defaultZoomMin
-		//nolint: ineffassign // zoomMax may need to be reset if it was modified
+		//nolint: ineffassign,wastedassign // zoomMax may need to be reset if it was modified
 		zoomMax = defaultZoomMax
 	}
 
