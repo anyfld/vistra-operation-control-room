@@ -83,6 +83,8 @@ func registerCamera(
 	client protov1connect.CameraServiceClient,
 	scanner *bufio.Scanner,
 ) {
+	const webrtcSampleURL = "http://localhost:1984/webrtc.html?src=camera&media=video+audio"
+
 	fmt.Println("\n--- カメラ追加 ---")
 
 	sampleCameras := generateSampleCameras(3)
@@ -91,7 +93,11 @@ func registerCamera(
 	for i, cam := range sampleCameras {
 		fmt.Printf("%d. %s (%s)\n", i+1, cam.Name, cam.Connection.Type.String())
 	}
-	fmt.Print("追加するカメラ番号を選択 (1-3): ")
+	fmt.Printf(
+		"追加するカメラ番号を選択 (1-%d)\nサンプルでは WebRTC カメラ (%s) を利用します: ",
+		len(sampleCameras),
+		webrtcSampleURL,
+	)
 
 	if !scanner.Scan() {
 		return
@@ -282,20 +288,13 @@ func sendPTZCommand(
 func generateSampleCameras(count int) []*protov1.RegisterCameraRequest {
 	cameras := []*protov1.RegisterCameraRequest{
 		{
-			Name:       "Sample ONVIF Camera 1",
+			Name:       "Sample WebRTC Camera",
 			Mode:       protov1.CameraMode_CAMERA_MODE_AUTONOMOUS,
 			MasterMfId: "master-mf-001",
 			Connection: &protov1.CameraConnection{
-				Type:    protov1.ConnectionType_CONNECTION_TYPE_ONVIF,
-				Address: "192.168.1.100",
-				Port:    80,
-				Credentials: &protov1.CameraCredentials{
-					Username: "admin",
-					Password: "password123",
-				},
-				Parameters: map[string]string{
-					"profile": "main",
-				},
+				Type: protov1.ConnectionType_CONNECTION_TYPE_WEBRTC,
+				Address: "http://localhost:1984/" +
+					"webrtc.html?src=camera&media=video+audio",
 			},
 			Capabilities: &protov1.CameraCapabilities{
 				SupportsPtz:         true,

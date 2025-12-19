@@ -189,4 +189,3 @@ func TestRegisterAndGetCameraE2E(t *testing.T) {
 		listResp.Msg.GetCameras()[0].GetId(),
 	)
 }
-
