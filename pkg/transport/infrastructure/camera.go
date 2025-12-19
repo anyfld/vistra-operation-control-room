@@ -37,6 +37,7 @@ func (r *CameraRepo) RegisterCamera(req *protov1.RegisterCameraRequest) *protov1
 		Mode:         req.GetMode(),
 		MasterMfId:   req.GetMasterMfId(),
 		Status:       protov1.CameraStatus_CAMERA_STATUS_ONLINE,
+		CurrentPtz:   nil,
 		LastSeenAtMs: time.Now().UnixMilli(),
 		Metadata:     req.GetMetadata(),
 	}
@@ -45,9 +46,11 @@ func (r *CameraRepo) RegisterCamera(req *protov1.RegisterCameraRequest) *protov1
 	if req.GetConnection() != nil {
 		r.connections[cameraID] = req.GetConnection()
 	}
+
 	if req.GetCapabilities() != nil {
 		r.capabilities[cameraID] = req.GetCapabilities()
 	}
+
 	r.connectionStatus[cameraID] = protov1.CameraStatus_CAMERA_STATUS_ONLINE
 
 	return camera
@@ -79,13 +82,15 @@ func (r *CameraRepo) UpdateCamera(cameraID string, req *protov1.UpdateCameraRequ
 	}
 
 	if req.Name != nil {
-		camera.Name = *req.Name
+		camera.Name = req.GetName()
 	}
-	if req.Connection != nil {
-		r.connections[cameraID] = req.Connection
+
+	if req.GetConnection() != nil {
+		r.connections[cameraID] = req.GetConnection()
 	}
+
 	if req.Metadata != nil {
-		camera.Metadata = req.Metadata
+		camera.Metadata = req.GetMetadata()
 	}
 
 	return camera
@@ -120,40 +125,12 @@ func (r *CameraRepo) ListCameras(
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var result []*protov1.Camera
+	result := make([]*protov1.Camera, 0, len(r.cameras))
 
 	for _, camera := range r.cameras {
-		if masterMfId != "" && camera.MasterMfId != masterMfId {
-			continue
+		if r.matchesFilters(camera, masterMfId, modeFilter, statusFilter) {
+			result = append(result, camera)
 		}
-
-		if len(modeFilter) > 0 {
-			found := false
-			for _, mode := range modeFilter {
-				if camera.Mode == mode {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
-
-		if len(statusFilter) > 0 {
-			found := false
-			for _, status := range statusFilter {
-				if camera.Status == status {
-					found = true
-					break
-				}
-			}
-			if !found {
-				continue
-			}
-		}
-
-		result = append(result, camera)
 	}
 
 	return result
@@ -169,6 +146,7 @@ func (r *CameraRepo) SwitchCameraMode(cameraID string, mode protov1.CameraMode) 
 	}
 
 	camera.Mode = mode
+
 	return true
 }
 
@@ -183,9 +161,11 @@ func (r *CameraRepo) UpdateHeartbeat(cameraID string, ptz *protov1.PTZParameters
 
 	camera.LastSeenAtMs = time.Now().UnixMilli()
 	camera.Status = status
+
 	if ptz != nil {
 		camera.CurrentPtz = ptz
 	}
+
 	r.connectionStatus[cameraID] = status
 
 	return true
@@ -196,6 +176,7 @@ func (r *CameraRepo) GetConnectionStatus(cameraID string) (protov1.CameraStatus,
 	defer r.mu.RUnlock()
 
 	status, ok := r.connectionStatus[cameraID]
+
 	return status, ok
 }
 
@@ -209,4 +190,45 @@ func (r *CameraRepo) GetAllConnectionStatuses() map[string]protov1.CameraStatus 
 	}
 
 	return result
+}
+
+func (r *CameraRepo) matchesFilters(
+	camera *protov1.Camera,
+	masterMfId string,
+	modeFilter []protov1.CameraMode,
+	statusFilter []protov1.CameraStatus,
+) bool {
+	if masterMfId != "" && camera.GetMasterMfId() != masterMfId {
+		return false
+	}
+
+	if len(modeFilter) > 0 && !r.matchesMode(camera.GetMode(), modeFilter) {
+		return false
+	}
+
+	if len(statusFilter) > 0 && !r.matchesStatus(camera.GetStatus(), statusFilter) {
+		return false
+	}
+
+	return true
+}
+
+func (r *CameraRepo) matchesMode(mode protov1.CameraMode, filter []protov1.CameraMode) bool {
+	for _, f := range filter {
+		if mode == f {
+			return true
+		}
+	}
+
+	return false
+}
+
+func (r *CameraRepo) matchesStatus(status protov1.CameraStatus, filter []protov1.CameraStatus) bool {
+	for _, f := range filter {
+		if status == f {
+			return true
+		}
+	}
+
+	return false
 }

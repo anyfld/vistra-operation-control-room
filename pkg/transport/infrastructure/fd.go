@@ -8,6 +8,21 @@ import (
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
 )
 
+const (
+	defaultConfidence     = 0.85
+	defaultBoundingBoxX   = 0.2
+	defaultBoundingBoxY   = 0.2
+	defaultBoundingBoxW   = 0.3
+	defaultBoundingBoxH   = 0.3
+	defaultProcessingTime = 50
+	panAdjustment         = 10.0
+	tiltAdjustment        = 5.0
+	zoomAdjustment        = 0.5
+	ptzSpeed              = 0.5
+	estimatedMoveTimeMs   = 1000
+	executionTimeMs       = 100
+)
+
 type FDRepo struct {
 	mu                         sync.RWMutex
 	patternMatchingSessions    map[string]*PatternMatchingSession
@@ -41,22 +56,22 @@ func (r *FDRepo) ProcessImage(
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
-	var detected []*protov1.DetectedSubject
+	detected := make([]*protov1.DetectedSubject, 0, len(targetSubjects))
 
 	for _, target := range targetSubjects {
 		detected = append(detected, &protov1.DetectedSubject{
 			Subject:    target,
-			Confidence: 0.85,
+			Confidence: defaultConfidence,
 			DetectedBox: &protov1.BoundingBox{
-				X:      0.2,
-				Y:      0.2,
-				Width:  0.3,
-				Height: 0.3,
+				X:      defaultBoundingBoxX,
+				Y:      defaultBoundingBoxY,
+				Width:  defaultBoundingBoxW,
+				Height: defaultBoundingBoxH,
 			},
 		})
 	}
 
-	return detected, 50
+	return detected, defaultProcessingTime
 }
 
 func (r *FDRepo) StartPatternMatching(
@@ -88,6 +103,7 @@ func (r *FDRepo) StopPatternMatching(sessionID string) bool {
 	}
 
 	delete(r.patternMatchingSessions, sessionID)
+
 	return true
 }
 
@@ -110,22 +126,25 @@ func (r *FDRepo) CalculateFraming(
 
 	if currentPtz == nil {
 		currentPtz = &protov1.PTZParameters{
-			Pan:  0.0,
-			Tilt: 0.0,
-			Zoom: 1.0,
+			Pan:       0.0,
+			Tilt:      0.0,
+			Zoom:      1.0,
+			PanSpeed:  0.0,
+			TiltSpeed: 0.0,
+			ZoomSpeed: 0.0,
 		}
 	}
 
 	calculatedPtz := &protov1.PTZParameters{
-		Pan:       currentPtz.Pan + 10.0,
-		Tilt:      currentPtz.Tilt + 5.0,
-		Zoom:      currentPtz.Zoom + 0.5,
-		PanSpeed:  0.5,
-		TiltSpeed: 0.5,
-		ZoomSpeed: 0.5,
+		Pan:       currentPtz.GetPan() + panAdjustment,
+		Tilt:      currentPtz.GetTilt() + tiltAdjustment,
+		Zoom:      currentPtz.GetZoom() + zoomAdjustment,
+		PanSpeed:  ptzSpeed,
+		TiltSpeed: ptzSpeed,
+		ZoomSpeed: ptzSpeed,
 	}
 
-	return calculatedPtz, 1000, true, ""
+	return calculatedPtz, estimatedMoveTimeMs, true, ""
 }
 
 func (r *FDRepo) SendControlCommand(command *protov1.ControlCommand) *protov1.ControlCommandResult {
@@ -143,9 +162,12 @@ func (r *FDRepo) SendControlCommand(command *protov1.ControlCommand) *protov1.Co
 	resultingPtz := command.GetPtzParameters()
 	if resultingPtz == nil {
 		resultingPtz = &protov1.PTZParameters{
-			Pan:  0.0,
-			Tilt: 0.0,
-			Zoom: 1.0,
+			Pan:       0.0,
+			Tilt:      0.0,
+			Zoom:      1.0,
+			PanSpeed:  0.0,
+			TiltSpeed: 0.0,
+			ZoomSpeed: 0.0,
 		}
 	}
 
@@ -154,7 +176,7 @@ func (r *FDRepo) SendControlCommand(command *protov1.ControlCommand) *protov1.Co
 		Success:         true,
 		ErrorMessage:    "",
 		ResultingPtz:    resultingPtz,
-		ExecutionTimeMs: 100,
+		ExecutionTimeMs: executionTimeMs,
 	}
 }
 
@@ -170,6 +192,7 @@ func (r *FDRepo) ReportCameraState(state *protov1.CameraState) bool {
 	defer r.mu.Unlock()
 
 	r.cameraStates[state.GetCameraId()] = state
+
 	return true
 }
 
@@ -197,9 +220,12 @@ func (r *FDRepo) ExecuteCinematography(
 	appliedPtz := instruction.GetPtzParameters()
 	if appliedPtz == nil {
 		appliedPtz = &protov1.PTZParameters{
-			Pan:  0.0,
-			Tilt: 0.0,
-			Zoom: 1.0,
+			Pan:       0.0,
+			Tilt:      0.0,
+			Zoom:      1.0,
+			PanSpeed:  0.0,
+			TiltSpeed: 0.0,
+			ZoomSpeed: 0.0,
 		}
 	}
 

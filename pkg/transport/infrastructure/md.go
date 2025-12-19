@@ -68,17 +68,20 @@ func (r *MDRepo) ListVideoOutputs(
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
-	var result []*protov1.VideoOutput
+	result := make([]*protov1.VideoOutput, 0, len(r.videoOutputs))
 
 	for _, output := range r.videoOutputs {
 		if len(typeFilter) > 0 {
 			found := false
+
 			for _, t := range typeFilter {
-				if output.Config.GetType() == t {
+				if output.GetConfig().GetType() == t {
 					found = true
+
 					break
 				}
 			}
+
 			if !found {
 				continue
 			}
@@ -86,12 +89,15 @@ func (r *MDRepo) ListVideoOutputs(
 
 		if len(statusFilter) > 0 {
 			found := false
+
 			for _, s := range statusFilter {
-				if output.Status == s {
+				if output.GetStatus() == s {
 					found = true
+
 					break
 				}
 			}
+
 			if !found {
 				continue
 			}

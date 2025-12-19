@@ -10,6 +10,10 @@ import (
 	"github.com/anyfld/vistra-operation-control-room/pkg/transport/usecase"
 )
 
+const (
+	cameraPollingIntervalMs = 500
+)
+
 type CameraHandler struct {
 	uc usecase.CameraInteractor
 }
@@ -100,10 +104,20 @@ func (h *CameraHandler) ListCameras(
 		return nil, err
 	}
 
+	count := len(cameras)
+
+	var totalCount uint32
+
+	if count > 0 && count <= int(^uint32(0)) {
+		totalCount = uint32(count)
+	} else {
+		totalCount = ^uint32(0)
+	}
+
 	return connect.NewResponse(&protov1.ListCamerasResponse{
 		Cameras:       cameras,
 		NextPageToken: "",
-		TotalCount:    uint32(len(cameras)),
+		TotalCount:    totalCount,
 	}), nil
 }
 
@@ -116,8 +130,12 @@ func (h *CameraHandler) SwitchCameraMode(
 		return nil, err
 	}
 
+	camera, _, _, err := h.uc.GetCamera(ctx, req.Msg.GetCameraId())
+	if err != nil {
+		return nil, err
+	}
+
 	if !success {
-		camera, _, _, _ := h.uc.GetCamera(ctx, req.Msg.GetCameraId())
 		return connect.NewResponse(&protov1.SwitchCameraModeResponse{
 			Success:      false,
 			Camera:       camera,
@@ -125,10 +143,10 @@ func (h *CameraHandler) SwitchCameraMode(
 		}), nil
 	}
 
-	camera, _, _, _ := h.uc.GetCamera(ctx, req.Msg.GetCameraId())
 	return connect.NewResponse(&protov1.SwitchCameraModeResponse{
-		Success: true,
-		Camera:  camera,
+		Success:      true,
+		Camera:       camera,
+		ErrorMessage: "",
 	}), nil
 }
 
@@ -173,10 +191,11 @@ func (h *CameraHandler) StreamConnectionStatus(
 
 			if !hadPrevious || previousStatus != currentStatus {
 				if err := stream.Send(&protov1.StreamConnectionStatusResponse{
-					CameraId:       cameraID,
-					PreviousStatus: previousStatus,
-					CurrentStatus:  currentStatus,
-					TimestampMs:    time.Now().UnixMilli(),
+					CameraId:         cameraID,
+					PreviousStatus:   previousStatus,
+					CurrentStatus:    currentStatus,
+					TimestampMs:      time.Now().UnixMilli(),
+					DisconnectReason: "",
 				}); err != nil {
 					return err
 				}
@@ -185,7 +204,7 @@ func (h *CameraHandler) StreamConnectionStatus(
 			}
 		}
 
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(cameraPollingIntervalMs * time.Millisecond)
 	}
 
 	return nil

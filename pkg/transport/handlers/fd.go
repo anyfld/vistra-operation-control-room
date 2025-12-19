@@ -10,6 +10,15 @@ import (
 	"github.com/anyfld/vistra-operation-control-room/pkg/transport/usecase"
 )
 
+const (
+	fdPollingIntervalMs   = 500
+	fdDefaultConfidence   = 0.85
+	fdDefaultBoundingBoxX = 0.2
+	fdDefaultBoundingBoxY = 0.2
+	fdDefaultBoundingBoxW = 0.3
+	fdDefaultBoundingBoxH = 0.3
+)
+
 type FDHandler struct {
 	uc usecase.FDInteractor
 }
@@ -61,7 +70,7 @@ func (h *FDHandler) StreamCinematographyInstructions(
 			}
 		}
 
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(fdPollingIntervalMs * time.Millisecond)
 	}
 
 	return nil
@@ -141,12 +150,12 @@ func (h *FDHandler) StreamPatternMatchResults(
 		for _, subject := range targetSubjects {
 			detected = append(detected, &protov1.DetectedSubject{
 				Subject:    subject,
-				Confidence: 0.85,
+				Confidence: fdDefaultConfidence,
 				DetectedBox: &protov1.BoundingBox{
-					X:      0.2,
-					Y:      0.2,
-					Width:  0.3,
-					Height: 0.3,
+					X:      fdDefaultBoundingBoxX,
+					Y:      fdDefaultBoundingBoxY,
+					Width:  fdDefaultBoundingBoxW,
+					Height: fdDefaultBoundingBoxH,
 				},
 			})
 		}
@@ -225,7 +234,7 @@ func (h *FDHandler) StreamControlCommands(
 			}
 		}
 
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(fdPollingIntervalMs * time.Millisecond)
 	}
 
 	return nil

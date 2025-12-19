@@ -10,6 +10,10 @@ import (
 	"github.com/anyfld/vistra-operation-control-room/pkg/transport/usecase"
 )
 
+const (
+	mdPollingIntervalMs = 500
+)
+
 type MDHandler struct {
 	uc usecase.MDInteractor
 }
@@ -58,7 +62,7 @@ func (h *MDHandler) StreamCinematographyInstructions(
 			}
 		}
 
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(mdPollingIntervalMs * time.Millisecond)
 	}
 
 	return nil
@@ -76,6 +80,7 @@ func (h *MDHandler) ForwardToFD(
 			CameraId:      req.Msg.GetInstruction().GetCameraId(),
 			Success:       true,
 			ErrorMessage:  "",
+			AppliedPtz:    nil,
 			CompletedAtMs: time.Now().UnixMilli(),
 		},
 	}), nil
@@ -217,43 +222,12 @@ func (h *MDHandler) StreamStreamingEvents(
 		default:
 		}
 
-		var outputs []*protov1.VideoOutput
-		if len(outputIDs) == 0 {
-			var err error
-			outputs, err = h.uc.GetStreamingStatus(ctx, "")
-			if err != nil {
-				return err
-			}
-		} else {
-			for _, outputID := range outputIDs {
-				output, err := h.uc.GetVideoOutput(ctx, outputID)
-				if err != nil {
-					continue
-				}
-				if output != nil {
-					outputs = append(outputs, output)
-				}
-			}
+		outputs := h.collectOutputs(ctx, outputIDs)
+		if err := h.sendStreamingEvents(stream, outputs); err != nil {
+			return err
 		}
 
-		for _, output := range outputs {
-			eventType := protov1.StreamingEventType_STREAMING_EVENT_TYPE_UNSPECIFIED
-			if output.Status == protov1.VideoOutputStatus_VIDEO_OUTPUT_STATUS_STREAMING {
-				eventType = protov1.StreamingEventType_STREAMING_EVENT_TYPE_STARTED
-			}
-
-			if err := stream.Send(&protov1.StreamStreamingEventsResponse{
-				OutputId:    output.Config.GetId(),
-				Type:        eventType,
-				Output:      output,
-				TimestampMs: time.Now().UnixMilli(),
-				Details:     "",
-			}); err != nil {
-				return err
-			}
-		}
-
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(mdPollingIntervalMs * time.Millisecond)
 	}
 
 	return nil
@@ -307,7 +281,60 @@ func (h *MDHandler) ReceiveFromLLM(
 
 		_ = llmContext
 
-		time.Sleep(500 * time.Millisecond)
+		time.Sleep(mdPollingIntervalMs * time.Millisecond)
+	}
+
+	return nil
+}
+
+func (h *MDHandler) collectOutputs(
+	ctx context.Context,
+	outputIDs []string,
+) []*protov1.VideoOutput {
+	if len(outputIDs) == 0 {
+		outputs, err := h.uc.GetStreamingStatus(ctx, "")
+		if err != nil {
+			return nil
+		}
+
+		return outputs
+	}
+
+	outputs := make([]*protov1.VideoOutput, 0, len(outputIDs))
+
+	for _, outputID := range outputIDs {
+		output, err := h.uc.GetVideoOutput(ctx, outputID)
+		if err != nil {
+			continue
+		}
+
+		if output != nil {
+			outputs = append(outputs, output)
+		}
+	}
+
+	return outputs
+}
+
+func (h *MDHandler) sendStreamingEvents(
+	stream *connect.ServerStream[protov1.StreamStreamingEventsResponse],
+	outputs []*protov1.VideoOutput,
+) error {
+	for _, output := range outputs {
+		eventType := protov1.StreamingEventType_STREAMING_EVENT_TYPE_UNSPECIFIED
+		if output.GetStatus() == protov1.VideoOutputStatus_VIDEO_OUTPUT_STATUS_STREAMING {
+			eventType = protov1.StreamingEventType_STREAMING_EVENT_TYPE_STARTED
+		}
+
+		if err := stream.Send(&protov1.StreamStreamingEventsResponse{
+			OutputId:    output.GetConfig().GetId(),
+			Type:        eventType,
+			Output:      output,
+			TimestampMs: time.Now().UnixMilli(),
+			Details:     "",
+		}); err != nil {
+			return err
+		}
 	}
 
 	return nil

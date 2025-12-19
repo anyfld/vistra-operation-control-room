@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"errors"
 
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
 	"github.com/anyfld/vistra-operation-control-room/pkg/transport/infrastructure"
@@ -51,7 +52,7 @@ func (u *CameraUsecase) UpdateCamera(
 ) (*protov1.Camera, error) {
 	camera := u.repo.UpdateCamera(req.GetCameraId(), req)
 	if camera == nil {
-		return nil, nil
+		return nil, errors.New("camera not found")
 	}
 
 	return camera, nil
@@ -107,6 +108,7 @@ func (u *CameraUsecase) GetConnectionStatus(
 	cameraID string,
 ) (protov1.CameraStatus, bool, error) {
 	status, ok := u.repo.GetConnectionStatus(cameraID)
+
 	return status, ok, nil
 }
 
@@ -119,6 +121,7 @@ func (u *CameraUsecase) GetAllConnectionStatuses(
 	}
 
 	result := make(map[string]protov1.CameraStatus)
+
 	for _, cameraID := range cameraIDs {
 		if status, ok := u.repo.GetConnectionStatus(cameraID); ok {
 			result[cameraID] = status
