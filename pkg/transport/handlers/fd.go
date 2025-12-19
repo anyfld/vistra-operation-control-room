@@ -339,38 +339,3 @@ func (h *FDHandler) StreamControlCommands(
 
 	return nil
 }
-
-func (h *FDHandler) ReportCameraState(
-	ctx context.Context,
-	req *connect.Request[protov1.ReportCameraStateRequest],
-) (*connect.Response[protov1.ReportCameraStateResponse], error) {
-	acknowledged, err := h.uc.ReportCameraState(ctx, req.Msg.GetState())
-	if err != nil {
-		return nil, err
-	}
-
-	return connect.NewResponse(&protov1.ReportCameraStateResponse{
-		Acknowledged: acknowledged,
-	}), nil
-}
-
-func (h *FDHandler) GetCameraState(
-	ctx context.Context,
-	req *connect.Request[protov1.GetCameraStateRequest],
-) (*connect.Response[protov1.GetCameraStateResponse], error) {
-	state, err := h.uc.GetCameraState(ctx, req.Msg.GetCameraId())
-	if err != nil {
-		return nil, err
-	}
-
-	if state == nil {
-		return nil, connect.NewError(
-			connect.CodeNotFound,
-			errors.New("camera state not found"),
-		)
-	}
-
-	return connect.NewResponse(&protov1.GetCameraStateResponse{
-		State: state,
-	}), nil
-}
