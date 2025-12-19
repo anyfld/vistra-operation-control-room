@@ -22,11 +22,15 @@ const (
 )
 
 type FDHandler struct {
-	uc usecase.FDInteractor
+	uc       usecase.FDInteractor
+	cameraUC usecase.CameraInteractor
 }
 
-func NewFDHandler(uc usecase.FDInteractor) *FDHandler {
-	return &FDHandler{uc: uc}
+func NewFDHandler(uc usecase.FDInteractor, cameraUC usecase.CameraInteractor) *FDHandler {
+	return &FDHandler{
+		uc:       uc,
+		cameraUC: cameraUC,
+	}
 }
 
 func (h *FDHandler) ExecuteCinematography(
@@ -309,9 +313,22 @@ func (h *FDHandler) StreamControlCommands(
 			}
 		} else if req.GetResult() != nil {
 		} else if req.GetState() != nil {
-			_, err := h.uc.ReportCameraState(ctx, req.GetState())
+			state := req.GetState()
+			_, err := h.uc.ReportCameraState(ctx, state)
 			if err != nil {
 				return err
+			}
+
+			if h.cameraUC != nil {
+				_, err := h.cameraUC.UpdateCameraState(
+					ctx,
+					state.GetCameraId(),
+					state.GetCurrentPtz(),
+					state.GetStatus(),
+				)
+				if err != nil {
+					return err
+				}
 			}
 		}
 	}

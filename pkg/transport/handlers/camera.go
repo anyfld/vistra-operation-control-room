@@ -150,24 +150,6 @@ func (h *CameraHandler) SwitchCameraMode(
 	}), nil
 }
 
-func (h *CameraHandler) Heartbeat(
-	ctx context.Context,
-	req *connect.Request[protov1.HeartbeatRequest],
-) (*connect.Response[protov1.HeartbeatResponse], error) {
-	success, err := h.uc.Heartbeat(ctx, req.Msg)
-	if err != nil {
-		return nil, connect.NewError(
-			connect.CodeNotFound,
-			errors.New("camera not found"),
-		)
-	}
-
-	return connect.NewResponse(&protov1.HeartbeatResponse{
-		Acknowledged:      success,
-		ServerTimestampMs: time.Now().UnixMilli(),
-	}), nil
-}
-
 func (h *CameraHandler) StreamConnectionStatus(
 	ctx context.Context,
 	req *connect.Request[protov1.StreamConnectionStatusRequest],
@@ -211,18 +193,4 @@ func (h *CameraHandler) StreamConnectionStatus(
 	}
 
 	return nil
-}
-
-func (h *CameraHandler) GetCameraCapabilities(
-	ctx context.Context,
-	req *connect.Request[protov1.GetCameraCapabilitiesRequest],
-) (*connect.Response[protov1.GetCameraCapabilitiesResponse], error) {
-	capabilities, err := h.uc.GetCameraCapabilities(ctx, req.Msg.GetCameraId())
-	if err != nil {
-		return nil, err
-	}
-
-	return connect.NewResponse(&protov1.GetCameraCapabilitiesResponse{
-		Capabilities: capabilities,
-	}), nil
 }

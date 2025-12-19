@@ -60,6 +60,22 @@ type FDInteractor interface {
 	) error
 }
 
+func (u *FDUsecase) SubscribePTZCommands(
+	ctx context.Context,
+	cameraID string,
+) (<-chan *infrastructure.PTZCommandEvent, error) {
+	return u.repo.SubscribePTZCommands(cameraID), nil
+}
+
+func (u *FDUsecase) UnsubscribePTZCommands(
+	ctx context.Context,
+	cameraID string,
+	ch <-chan *infrastructure.PTZCommandEvent,
+) error {
+	u.repo.UnsubscribePTZCommands(cameraID, ch)
+	return nil
+}
+
 type FDUsecase struct {
 	repo *infrastructure.FDRepo
 }
@@ -165,20 +181,4 @@ func (u *FDUsecase) GetCameraState(
 	cameraID string,
 ) (*protov1.CameraState, error) {
 	return u.repo.GetCameraState(cameraID), nil
-}
-
-func (u *FDUsecase) SubscribePTZCommands(
-	ctx context.Context,
-	cameraID string,
-) (<-chan *infrastructure.PTZCommandEvent, error) {
-	return u.repo.SubscribePTZCommands(cameraID), nil
-}
-
-func (u *FDUsecase) UnsubscribePTZCommands(
-	ctx context.Context,
-	cameraID string,
-	ch <-chan *infrastructure.PTZCommandEvent,
-) error {
-	u.repo.UnsubscribePTZCommands(cameraID, ch)
-	return nil
 }

@@ -151,7 +151,7 @@ func (r *CameraRepo) SwitchCameraMode(cameraID string, mode protov1.CameraMode) 
 	return true
 }
 
-func (r *CameraRepo) UpdateHeartbeat(cameraID string, ptz *protov1.PTZParameters, status protov1.CameraStatus) bool {
+func (r *CameraRepo) UpdateCameraState(cameraID string, ptz *protov1.PTZParameters, status protov1.CameraStatus) bool {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 

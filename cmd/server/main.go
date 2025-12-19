@@ -23,9 +23,8 @@ import (
 )
 
 const (
-	readHeaderTimeout            = 10 * time.Second
-	shutdownTimeout              = 30 * time.Second
-	cameraHeartbeatCheckInterval = 5 * time.Second
+	readHeaderTimeout = 10 * time.Second
+	shutdownTimeout   = 30 * time.Second
 )
 
 type ExampleServiceHandler struct{}
@@ -84,22 +83,6 @@ func registerCameraService(mux *http.ServeMux) {
 	if path, h := protov1connect.NewCameraServiceHandler(handlers.NewCameraHandler(cameraUC)); path != "" {
 		mux.Handle(path, h)
 	}
-
-	startCameraHeartbeatChecker(cameraUC)
-}
-
-func startCameraHeartbeatChecker(cameraUC usecase.CameraInteractor) {
-	go func() {
-		ticker := time.NewTicker(cameraHeartbeatCheckInterval)
-		defer ticker.Stop()
-
-		ctx := context.Background()
-		for range ticker.C {
-			if err := cameraUC.CheckAndUpdateDisconnectedCameras(ctx); err != nil {
-				log.Printf("Error checking disconnected cameras: %v", err)
-			}
-		}
-	}()
 }
 func registerCRService(mux *http.ServeMux) {
 	uc := usecase.New(infrastructure.NewInMemoryRepo())
@@ -110,9 +93,11 @@ func registerCRService(mux *http.ServeMux) {
 
 func registerFDService(mux *http.ServeMux) {
 	fdRepo := infrastructure.NewFDRepo()
+	cameraRepo := infrastructure.NewCameraRepo()
 
 	fdUC := usecase.NewFDUsecase(fdRepo)
-	if path, h := protov1connect.NewFDServiceHandler(handlers.NewFDHandler(fdUC)); path != "" {
+	cameraUC := usecase.NewCameraUsecase(cameraRepo)
+	if path, h := protov1connect.NewFDServiceHandler(handlers.NewFDHandler(fdUC, cameraUC)); path != "" {
 		mux.Handle(path, h)
 	}
 }
