@@ -42,6 +42,7 @@ func (r *CameraRepo) RegisterCamera(req *protov1.RegisterCameraRequest) *protov1
 	camera.CurrentPtz = nil
 	camera.LastSeenAtMs = time.Now().UnixMilli()
 	camera.Metadata = req.GetMetadata()
+	camera.WebrtcConnectionName = req.GetWebrtcConnectionName()
 
 	r.cameras[cameraID] = camera
 	if req.GetConnection() != nil {

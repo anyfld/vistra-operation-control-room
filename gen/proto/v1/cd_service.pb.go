@@ -94,9 +94,11 @@ type RegisterCameraRequest struct {
 	// カメラの能力情報
 	Capabilities *CameraCapabilities `protobuf:"bytes,5,opt,name=capabilities,proto3" json:"capabilities,omitempty"`
 	// メタデータ
-	Metadata      map[string]string `protobuf:"bytes,6,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Metadata map[string]string `protobuf:"bytes,6,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// 視聴用WebRTC接続名
+	WebrtcConnectionName string `protobuf:"bytes,7,opt,name=webrtc_connection_name,json=webrtcConnectionName,proto3" json:"webrtc_connection_name,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *RegisterCameraRequest) Reset() {
@@ -169,6 +171,13 @@ func (x *RegisterCameraRequest) GetMetadata() map[string]string {
 		return x.Metadata
 	}
 	return nil
+}
+
+func (x *RegisterCameraRequest) GetWebrtcConnectionName() string {
+	if x != nil {
+		return x.WebrtcConnectionName
+	}
+	return ""
 }
 
 type RegisterCameraResponse struct {
@@ -307,11 +316,13 @@ type UpdateCameraRequest struct {
 	state    protoimpl.MessageState `protogen:"open.v1"`
 	CameraId string                 `protobuf:"bytes,1,opt,name=camera_id,json=cameraId,proto3" json:"camera_id,omitempty"`
 	// 更新するフィールド (設定されたフィールドのみ更新)
-	Name          *string           `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"`
-	Connection    *CameraConnection `protobuf:"bytes,3,opt,name=connection,proto3,oneof" json:"connection,omitempty"`
-	Metadata      map[string]string `protobuf:"bytes,4,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
+	Name       *string           `protobuf:"bytes,2,opt,name=name,proto3,oneof" json:"name,omitempty"`
+	Connection *CameraConnection `protobuf:"bytes,3,opt,name=connection,proto3,oneof" json:"connection,omitempty"`
+	Metadata   map[string]string `protobuf:"bytes,4,rep,name=metadata,proto3" json:"metadata,omitempty" protobuf_key:"bytes,1,opt,name=key" protobuf_val:"bytes,2,opt,name=value"`
+	// 視聴用WebRTC接続名
+	WebrtcConnectionName *string `protobuf:"bytes,5,opt,name=webrtc_connection_name,json=webrtcConnectionName,proto3,oneof" json:"webrtc_connection_name,omitempty"`
+	unknownFields        protoimpl.UnknownFields
+	sizeCache            protoimpl.SizeCache
 }
 
 func (x *UpdateCameraRequest) Reset() {
@@ -370,6 +381,13 @@ func (x *UpdateCameraRequest) GetMetadata() map[string]string {
 		return x.Metadata
 	}
 	return nil
+}
+
+func (x *UpdateCameraRequest) GetWebrtcConnectionName() string {
+	if x != nil && x.WebrtcConnectionName != nil {
+		return *x.WebrtcConnectionName
+	}
+	return ""
 }
 
 type UpdateCameraResponse struct {
@@ -1247,7 +1265,7 @@ var File_v1_cd_service_proto protoreflect.FileDescriptor
 
 const file_v1_cd_service_proto_rawDesc = "" +
 	"\n" +
-	"\x13v1/cd_service.proto\x12\x02v1\x1a\x13v1/cr_service.proto\"\xe5\x02\n" +
+	"\x13v1/cd_service.proto\x12\x02v1\x1a\x13v1/cr_service.proto\"\x9b\x03\n" +
 	"\x15RegisterCameraRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
 	"\x04mode\x18\x02 \x01(\x0e2\x0e.v1.CameraModeR\x04mode\x12 \n" +
@@ -1257,7 +1275,8 @@ const file_v1_cd_service_proto_rawDesc = "" +
 	"connection\x18\x04 \x01(\v2\x14.v1.CameraConnectionR\n" +
 	"connection\x12:\n" +
 	"\fcapabilities\x18\x05 \x01(\v2\x16.v1.CameraCapabilitiesR\fcapabilities\x12C\n" +
-	"\bmetadata\x18\x06 \x03(\v2'.v1.RegisterCameraRequest.MetadataEntryR\bmetadata\x1a;\n" +
+	"\bmetadata\x18\x06 \x03(\v2'.v1.RegisterCameraRequest.MetadataEntryR\bmetadata\x124\n" +
+	"\x16webrtc_connection_name\x18\a \x01(\tR\x14webrtcConnectionName\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01\"<\n" +
@@ -1267,19 +1286,21 @@ const file_v1_cd_service_proto_rawDesc = "" +
 	"\x17UnregisterCameraRequest\x12\x1b\n" +
 	"\tcamera_id\x18\x01 \x01(\tR\bcameraId\"4\n" +
 	"\x18UnregisterCameraResponse\x12\x18\n" +
-	"\asuccess\x18\x01 \x01(\bR\asuccess\"\x9e\x02\n" +
+	"\asuccess\x18\x01 \x01(\bR\asuccess\"\xf4\x02\n" +
 	"\x13UpdateCameraRequest\x12\x1b\n" +
 	"\tcamera_id\x18\x01 \x01(\tR\bcameraId\x12\x17\n" +
 	"\x04name\x18\x02 \x01(\tH\x00R\x04name\x88\x01\x01\x129\n" +
 	"\n" +
 	"connection\x18\x03 \x01(\v2\x14.v1.CameraConnectionH\x01R\n" +
 	"connection\x88\x01\x01\x12A\n" +
-	"\bmetadata\x18\x04 \x03(\v2%.v1.UpdateCameraRequest.MetadataEntryR\bmetadata\x1a;\n" +
+	"\bmetadata\x18\x04 \x03(\v2%.v1.UpdateCameraRequest.MetadataEntryR\bmetadata\x129\n" +
+	"\x16webrtc_connection_name\x18\x05 \x01(\tH\x02R\x14webrtcConnectionName\x88\x01\x01\x1a;\n" +
 	"\rMetadataEntry\x12\x10\n" +
 	"\x03key\x18\x01 \x01(\tR\x03key\x12\x14\n" +
 	"\x05value\x18\x02 \x01(\tR\x05value:\x028\x01B\a\n" +
 	"\x05_nameB\r\n" +
-	"\v_connection\":\n" +
+	"\v_connectionB\x19\n" +
+	"\x17_webrtc_connection_name\":\n" +
 	"\x14UpdateCameraResponse\x12\"\n" +
 	"\x06camera\x18\x01 \x01(\v2\n" +
 	".v1.CameraR\x06camera\"\xa6\x02\n" +

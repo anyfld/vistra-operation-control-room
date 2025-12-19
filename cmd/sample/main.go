@@ -317,6 +317,7 @@ func generateSampleCameras(count int) []*protov1.RegisterCameraRequest {
 				Address: "http://localhost:1984/" +
 					"webrtc.html?src=camera&media=video+audio",
 			},
+			WebrtcConnectionName: "camera",
 			Capabilities: &protov1.CameraCapabilities{
 				SupportsPtz:         true,
 				PanMin:              -180.0,
