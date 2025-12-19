@@ -916,130 +916,6 @@ func (x *SwitchCameraModeResponse) GetErrorMessage() string {
 	return ""
 }
 
-type HeartbeatRequest struct {
-	state    protoimpl.MessageState `protogen:"open.v1"`
-	CameraId string                 `protobuf:"bytes,1,opt,name=camera_id,json=cameraId,proto3" json:"camera_id,omitempty"`
-	// 現在のPTZ状態
-	CurrentPtz *PTZParameters `protobuf:"bytes,2,opt,name=current_ptz,json=currentPtz,proto3" json:"current_ptz,omitempty"`
-	// ステータス
-	Status CameraStatus `protobuf:"varint,3,opt,name=status,proto3,enum=v1.CameraStatus" json:"status,omitempty"`
-	// タイムスタンプ
-	TimestampMs   int64 `protobuf:"varint,4,opt,name=timestamp_ms,json=timestampMs,proto3" json:"timestamp_ms,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *HeartbeatRequest) Reset() {
-	*x = HeartbeatRequest{}
-	mi := &file_v1_cd_service_proto_msgTypes[14]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HeartbeatRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HeartbeatRequest) ProtoMessage() {}
-
-func (x *HeartbeatRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_cd_service_proto_msgTypes[14]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HeartbeatRequest.ProtoReflect.Descriptor instead.
-func (*HeartbeatRequest) Descriptor() ([]byte, []int) {
-	return file_v1_cd_service_proto_rawDescGZIP(), []int{14}
-}
-
-func (x *HeartbeatRequest) GetCameraId() string {
-	if x != nil {
-		return x.CameraId
-	}
-	return ""
-}
-
-func (x *HeartbeatRequest) GetCurrentPtz() *PTZParameters {
-	if x != nil {
-		return x.CurrentPtz
-	}
-	return nil
-}
-
-func (x *HeartbeatRequest) GetStatus() CameraStatus {
-	if x != nil {
-		return x.Status
-	}
-	return CameraStatus_CAMERA_STATUS_UNSPECIFIED
-}
-
-func (x *HeartbeatRequest) GetTimestampMs() int64 {
-	if x != nil {
-		return x.TimestampMs
-	}
-	return 0
-}
-
-type HeartbeatResponse struct {
-	state        protoimpl.MessageState `protogen:"open.v1"`
-	Acknowledged bool                   `protobuf:"varint,1,opt,name=acknowledged,proto3" json:"acknowledged,omitempty"`
-	// サーバ側のタイムスタンプ
-	ServerTimestampMs int64 `protobuf:"varint,2,opt,name=server_timestamp_ms,json=serverTimestampMs,proto3" json:"server_timestamp_ms,omitempty"`
-	unknownFields     protoimpl.UnknownFields
-	sizeCache         protoimpl.SizeCache
-}
-
-func (x *HeartbeatResponse) Reset() {
-	*x = HeartbeatResponse{}
-	mi := &file_v1_cd_service_proto_msgTypes[15]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *HeartbeatResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*HeartbeatResponse) ProtoMessage() {}
-
-func (x *HeartbeatResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_cd_service_proto_msgTypes[15]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use HeartbeatResponse.ProtoReflect.Descriptor instead.
-func (*HeartbeatResponse) Descriptor() ([]byte, []int) {
-	return file_v1_cd_service_proto_rawDescGZIP(), []int{15}
-}
-
-func (x *HeartbeatResponse) GetAcknowledged() bool {
-	if x != nil {
-		return x.Acknowledged
-	}
-	return false
-}
-
-func (x *HeartbeatResponse) GetServerTimestampMs() int64 {
-	if x != nil {
-		return x.ServerTimestampMs
-	}
-	return 0
-}
-
 type StreamConnectionStatusRequest struct {
 	state protoimpl.MessageState `protogen:"open.v1"`
 	// 監視対象カメラID (空の場合は全カメラ)
@@ -1050,7 +926,7 @@ type StreamConnectionStatusRequest struct {
 
 func (x *StreamConnectionStatusRequest) Reset() {
 	*x = StreamConnectionStatusRequest{}
-	mi := &file_v1_cd_service_proto_msgTypes[16]
+	mi := &file_v1_cd_service_proto_msgTypes[14]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1062,7 +938,7 @@ func (x *StreamConnectionStatusRequest) String() string {
 func (*StreamConnectionStatusRequest) ProtoMessage() {}
 
 func (x *StreamConnectionStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_cd_service_proto_msgTypes[16]
+	mi := &file_v1_cd_service_proto_msgTypes[14]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1075,7 +951,7 @@ func (x *StreamConnectionStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamConnectionStatusRequest.ProtoReflect.Descriptor instead.
 func (*StreamConnectionStatusRequest) Descriptor() ([]byte, []int) {
-	return file_v1_cd_service_proto_rawDescGZIP(), []int{16}
+	return file_v1_cd_service_proto_rawDescGZIP(), []int{14}
 }
 
 func (x *StreamConnectionStatusRequest) GetCameraIds() []string {
@@ -1100,7 +976,7 @@ type StreamConnectionStatusResponse struct {
 
 func (x *StreamConnectionStatusResponse) Reset() {
 	*x = StreamConnectionStatusResponse{}
-	mi := &file_v1_cd_service_proto_msgTypes[17]
+	mi := &file_v1_cd_service_proto_msgTypes[15]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1112,7 +988,7 @@ func (x *StreamConnectionStatusResponse) String() string {
 func (*StreamConnectionStatusResponse) ProtoMessage() {}
 
 func (x *StreamConnectionStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_cd_service_proto_msgTypes[17]
+	mi := &file_v1_cd_service_proto_msgTypes[15]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1125,7 +1001,7 @@ func (x *StreamConnectionStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use StreamConnectionStatusResponse.ProtoReflect.Descriptor instead.
 func (*StreamConnectionStatusResponse) Descriptor() ([]byte, []int) {
-	return file_v1_cd_service_proto_rawDescGZIP(), []int{17}
+	return file_v1_cd_service_proto_rawDescGZIP(), []int{15}
 }
 
 func (x *StreamConnectionStatusResponse) GetCameraId() string {
@@ -1195,7 +1071,7 @@ type CameraCapabilities struct {
 
 func (x *CameraCapabilities) Reset() {
 	*x = CameraCapabilities{}
-	mi := &file_v1_cd_service_proto_msgTypes[18]
+	mi := &file_v1_cd_service_proto_msgTypes[16]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1207,7 +1083,7 @@ func (x *CameraCapabilities) String() string {
 func (*CameraCapabilities) ProtoMessage() {}
 
 func (x *CameraCapabilities) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_cd_service_proto_msgTypes[18]
+	mi := &file_v1_cd_service_proto_msgTypes[16]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1220,7 +1096,7 @@ func (x *CameraCapabilities) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use CameraCapabilities.ProtoReflect.Descriptor instead.
 func (*CameraCapabilities) Descriptor() ([]byte, []int) {
-	return file_v1_cd_service_proto_rawDescGZIP(), []int{18}
+	return file_v1_cd_service_proto_rawDescGZIP(), []int{16}
 }
 
 func (x *CameraCapabilities) GetSupportsPtz() bool {
@@ -1325,7 +1201,7 @@ type Resolution struct {
 
 func (x *Resolution) Reset() {
 	*x = Resolution{}
-	mi := &file_v1_cd_service_proto_msgTypes[19]
+	mi := &file_v1_cd_service_proto_msgTypes[17]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -1337,7 +1213,7 @@ func (x *Resolution) String() string {
 func (*Resolution) ProtoMessage() {}
 
 func (x *Resolution) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_cd_service_proto_msgTypes[19]
+	mi := &file_v1_cd_service_proto_msgTypes[17]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -1350,7 +1226,7 @@ func (x *Resolution) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use Resolution.ProtoReflect.Descriptor instead.
 func (*Resolution) Descriptor() ([]byte, []int) {
-	return file_v1_cd_service_proto_rawDescGZIP(), []int{19}
+	return file_v1_cd_service_proto_rawDescGZIP(), []int{17}
 }
 
 func (x *Resolution) GetWidth() uint32 {
@@ -1367,99 +1243,11 @@ func (x *Resolution) GetHeight() uint32 {
 	return 0
 }
 
-type GetCameraCapabilitiesRequest struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	CameraId      string                 `protobuf:"bytes,1,opt,name=camera_id,json=cameraId,proto3" json:"camera_id,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetCameraCapabilitiesRequest) Reset() {
-	*x = GetCameraCapabilitiesRequest{}
-	mi := &file_v1_cd_service_proto_msgTypes[20]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetCameraCapabilitiesRequest) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetCameraCapabilitiesRequest) ProtoMessage() {}
-
-func (x *GetCameraCapabilitiesRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_cd_service_proto_msgTypes[20]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetCameraCapabilitiesRequest.ProtoReflect.Descriptor instead.
-func (*GetCameraCapabilitiesRequest) Descriptor() ([]byte, []int) {
-	return file_v1_cd_service_proto_rawDescGZIP(), []int{20}
-}
-
-func (x *GetCameraCapabilitiesRequest) GetCameraId() string {
-	if x != nil {
-		return x.CameraId
-	}
-	return ""
-}
-
-type GetCameraCapabilitiesResponse struct {
-	state         protoimpl.MessageState `protogen:"open.v1"`
-	Capabilities  *CameraCapabilities    `protobuf:"bytes,1,opt,name=capabilities,proto3" json:"capabilities,omitempty"`
-	unknownFields protoimpl.UnknownFields
-	sizeCache     protoimpl.SizeCache
-}
-
-func (x *GetCameraCapabilitiesResponse) Reset() {
-	*x = GetCameraCapabilitiesResponse{}
-	mi := &file_v1_cd_service_proto_msgTypes[21]
-	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-	ms.StoreMessageInfo(mi)
-}
-
-func (x *GetCameraCapabilitiesResponse) String() string {
-	return protoimpl.X.MessageStringOf(x)
-}
-
-func (*GetCameraCapabilitiesResponse) ProtoMessage() {}
-
-func (x *GetCameraCapabilitiesResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_v1_cd_service_proto_msgTypes[21]
-	if x != nil {
-		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
-		if ms.LoadMessageInfo() == nil {
-			ms.StoreMessageInfo(mi)
-		}
-		return ms
-	}
-	return mi.MessageOf(x)
-}
-
-// Deprecated: Use GetCameraCapabilitiesResponse.ProtoReflect.Descriptor instead.
-func (*GetCameraCapabilitiesResponse) Descriptor() ([]byte, []int) {
-	return file_v1_cd_service_proto_rawDescGZIP(), []int{21}
-}
-
-func (x *GetCameraCapabilitiesResponse) GetCapabilities() *CameraCapabilities {
-	if x != nil {
-		return x.Capabilities
-	}
-	return nil
-}
-
 var File_v1_cd_service_proto protoreflect.FileDescriptor
 
 const file_v1_cd_service_proto_rawDesc = "" +
 	"\n" +
-	"\x13v1/cd_service.proto\x12\x02v1\x1a\x17v1/cinematography.proto\x1a\x13v1/cr_service.proto\"\xe5\x02\n" +
+	"\x13v1/cd_service.proto\x12\x02v1\x1a\x13v1/cr_service.proto\"\xe5\x02\n" +
 	"\x15RegisterCameraRequest\x12\x12\n" +
 	"\x04name\x18\x01 \x01(\tR\x04name\x12\"\n" +
 	"\x04mode\x18\x02 \x01(\x0e2\x0e.v1.CameraModeR\x04mode\x12 \n" +
@@ -1542,16 +1330,7 @@ const file_v1_cd_service_proto_rawDesc = "" +
 	"\asuccess\x18\x01 \x01(\bR\asuccess\x12\"\n" +
 	"\x06camera\x18\x02 \x01(\v2\n" +
 	".v1.CameraR\x06camera\x12#\n" +
-	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\"\xb0\x01\n" +
-	"\x10HeartbeatRequest\x12\x1b\n" +
-	"\tcamera_id\x18\x01 \x01(\tR\bcameraId\x122\n" +
-	"\vcurrent_ptz\x18\x02 \x01(\v2\x11.v1.PTZParametersR\n" +
-	"currentPtz\x12(\n" +
-	"\x06status\x18\x03 \x01(\x0e2\x10.v1.CameraStatusR\x06status\x12!\n" +
-	"\ftimestamp_ms\x18\x04 \x01(\x03R\vtimestampMs\"g\n" +
-	"\x11HeartbeatResponse\x12\"\n" +
-	"\facknowledged\x18\x01 \x01(\bR\facknowledged\x12.\n" +
-	"\x13server_timestamp_ms\x18\x02 \x01(\x03R\x11serverTimestampMs\">\n" +
+	"\rerror_message\x18\x03 \x01(\tR\ferrorMessage\">\n" +
 	"\x1dStreamConnectionStatusRequest\x12\x1d\n" +
 	"\n" +
 	"camera_ids\x18\x01 \x03(\tR\tcameraIds\"\x81\x02\n" +
@@ -1579,28 +1358,22 @@ const file_v1_cd_service_proto_rawDesc = "" +
 	"\n" +
 	"Resolution\x12\x14\n" +
 	"\x05width\x18\x01 \x01(\rR\x05width\x12\x16\n" +
-	"\x06height\x18\x02 \x01(\rR\x06height\";\n" +
-	"\x1cGetCameraCapabilitiesRequest\x12\x1b\n" +
-	"\tcamera_id\x18\x01 \x01(\tR\bcameraId\"[\n" +
-	"\x1dGetCameraCapabilitiesResponse\x12:\n" +
-	"\fcapabilities\x18\x01 \x01(\v2\x16.v1.CameraCapabilitiesR\fcapabilities*\xbb\x01\n" +
+	"\x06height\x18\x02 \x01(\rR\x06height*\xbb\x01\n" +
 	"\x0eConnectionType\x12\x1f\n" +
 	"\x1bCONNECTION_TYPE_UNSPECIFIED\x10\x00\x12\x19\n" +
 	"\x15CONNECTION_TYPE_ONVIF\x10\x01\x12\x17\n" +
 	"\x13CONNECTION_TYPE_NDI\x10\x02\x12\x1e\n" +
 	"\x1aCONNECTION_TYPE_USB_SERIAL\x10\x03\x12\x1a\n" +
 	"\x16CONNECTION_TYPE_WEBRTC\x10\x04\x12\x18\n" +
-	"\x14CONNECTION_TYPE_RTSP\x10\x052\xc0\x05\n" +
+	"\x14CONNECTION_TYPE_RTSP\x10\x052\xa4\x04\n" +
 	"\rCameraService\x12I\n" +
 	"\x0eRegisterCamera\x12\x19.v1.RegisterCameraRequest\x1a\x1a.v1.RegisterCameraResponse\"\x00\x12O\n" +
 	"\x10UnregisterCamera\x12\x1b.v1.UnregisterCameraRequest\x1a\x1c.v1.UnregisterCameraResponse\"\x00\x12C\n" +
 	"\fUpdateCamera\x12\x17.v1.UpdateCameraRequest\x1a\x18.v1.UpdateCameraResponse\"\x00\x12:\n" +
 	"\tGetCamera\x12\x14.v1.GetCameraRequest\x1a\x15.v1.GetCameraResponse\"\x00\x12@\n" +
 	"\vListCameras\x12\x16.v1.ListCamerasRequest\x1a\x17.v1.ListCamerasResponse\"\x00\x12O\n" +
-	"\x10SwitchCameraMode\x12\x1b.v1.SwitchCameraModeRequest\x1a\x1c.v1.SwitchCameraModeResponse\"\x00\x12:\n" +
-	"\tHeartbeat\x12\x14.v1.HeartbeatRequest\x1a\x15.v1.HeartbeatResponse\"\x00\x12c\n" +
-	"\x16StreamConnectionStatus\x12!.v1.StreamConnectionStatusRequest\x1a\".v1.StreamConnectionStatusResponse\"\x000\x01\x12^\n" +
-	"\x15GetCameraCapabilities\x12 .v1.GetCameraCapabilitiesRequest\x1a!.v1.GetCameraCapabilitiesResponse\"\x00BFZDgithub.com/anyfld/vistra-operation-control-room/gen/proto/v1;protov1b\x06proto3"
+	"\x10SwitchCameraMode\x12\x1b.v1.SwitchCameraModeRequest\x1a\x1c.v1.SwitchCameraModeResponse\"\x00\x12c\n" +
+	"\x16StreamConnectionStatus\x12!.v1.StreamConnectionStatusRequest\x1a\".v1.StreamConnectionStatusResponse\"\x000\x01BFZDgithub.com/anyfld/vistra-operation-control-room/gen/proto/v1;protov1b\x06proto3"
 
 var (
 	file_v1_cd_service_proto_rawDescOnce sync.Once
@@ -1615,7 +1388,7 @@ func file_v1_cd_service_proto_rawDescGZIP() []byte {
 }
 
 var file_v1_cd_service_proto_enumTypes = make([]protoimpl.EnumInfo, 1)
-var file_v1_cd_service_proto_msgTypes = make([]protoimpl.MessageInfo, 25)
+var file_v1_cd_service_proto_msgTypes = make([]protoimpl.MessageInfo, 21)
 var file_v1_cd_service_proto_goTypes = []any{
 	(ConnectionType)(0),                    // 0: v1.ConnectionType
 	(*RegisterCameraRequest)(nil),          // 1: v1.RegisterCameraRequest
@@ -1632,71 +1405,59 @@ var file_v1_cd_service_proto_goTypes = []any{
 	(*ListCamerasResponse)(nil),            // 12: v1.ListCamerasResponse
 	(*SwitchCameraModeRequest)(nil),        // 13: v1.SwitchCameraModeRequest
 	(*SwitchCameraModeResponse)(nil),       // 14: v1.SwitchCameraModeResponse
-	(*HeartbeatRequest)(nil),               // 15: v1.HeartbeatRequest
-	(*HeartbeatResponse)(nil),              // 16: v1.HeartbeatResponse
-	(*StreamConnectionStatusRequest)(nil),  // 17: v1.StreamConnectionStatusRequest
-	(*StreamConnectionStatusResponse)(nil), // 18: v1.StreamConnectionStatusResponse
-	(*CameraCapabilities)(nil),             // 19: v1.CameraCapabilities
-	(*Resolution)(nil),                     // 20: v1.Resolution
-	(*GetCameraCapabilitiesRequest)(nil),   // 21: v1.GetCameraCapabilitiesRequest
-	(*GetCameraCapabilitiesResponse)(nil),  // 22: v1.GetCameraCapabilitiesResponse
-	nil,                                    // 23: v1.RegisterCameraRequest.MetadataEntry
-	nil,                                    // 24: v1.UpdateCameraRequest.MetadataEntry
-	nil,                                    // 25: v1.CameraConnection.ParametersEntry
-	(CameraMode)(0),                        // 26: v1.CameraMode
-	(*Camera)(nil),                         // 27: v1.Camera
-	(CameraStatus)(0),                      // 28: v1.CameraStatus
-	(*PTZParameters)(nil),                  // 29: v1.PTZParameters
+	(*StreamConnectionStatusRequest)(nil),  // 15: v1.StreamConnectionStatusRequest
+	(*StreamConnectionStatusResponse)(nil), // 16: v1.StreamConnectionStatusResponse
+	(*CameraCapabilities)(nil),             // 17: v1.CameraCapabilities
+	(*Resolution)(nil),                     // 18: v1.Resolution
+	nil,                                    // 19: v1.RegisterCameraRequest.MetadataEntry
+	nil,                                    // 20: v1.UpdateCameraRequest.MetadataEntry
+	nil,                                    // 21: v1.CameraConnection.ParametersEntry
+	(CameraMode)(0),                        // 22: v1.CameraMode
+	(*Camera)(nil),                         // 23: v1.Camera
+	(CameraStatus)(0),                      // 24: v1.CameraStatus
 }
 var file_v1_cd_service_proto_depIdxs = []int32{
-	26, // 0: v1.RegisterCameraRequest.mode:type_name -> v1.CameraMode
+	22, // 0: v1.RegisterCameraRequest.mode:type_name -> v1.CameraMode
 	7,  // 1: v1.RegisterCameraRequest.connection:type_name -> v1.CameraConnection
-	19, // 2: v1.RegisterCameraRequest.capabilities:type_name -> v1.CameraCapabilities
-	23, // 3: v1.RegisterCameraRequest.metadata:type_name -> v1.RegisterCameraRequest.MetadataEntry
-	27, // 4: v1.RegisterCameraResponse.camera:type_name -> v1.Camera
+	17, // 2: v1.RegisterCameraRequest.capabilities:type_name -> v1.CameraCapabilities
+	19, // 3: v1.RegisterCameraRequest.metadata:type_name -> v1.RegisterCameraRequest.MetadataEntry
+	23, // 4: v1.RegisterCameraResponse.camera:type_name -> v1.Camera
 	7,  // 5: v1.UpdateCameraRequest.connection:type_name -> v1.CameraConnection
-	24, // 6: v1.UpdateCameraRequest.metadata:type_name -> v1.UpdateCameraRequest.MetadataEntry
-	27, // 7: v1.UpdateCameraResponse.camera:type_name -> v1.Camera
+	20, // 6: v1.UpdateCameraRequest.metadata:type_name -> v1.UpdateCameraRequest.MetadataEntry
+	23, // 7: v1.UpdateCameraResponse.camera:type_name -> v1.Camera
 	0,  // 8: v1.CameraConnection.type:type_name -> v1.ConnectionType
 	8,  // 9: v1.CameraConnection.credentials:type_name -> v1.CameraCredentials
-	25, // 10: v1.CameraConnection.parameters:type_name -> v1.CameraConnection.ParametersEntry
-	27, // 11: v1.GetCameraResponse.camera:type_name -> v1.Camera
+	21, // 10: v1.CameraConnection.parameters:type_name -> v1.CameraConnection.ParametersEntry
+	23, // 11: v1.GetCameraResponse.camera:type_name -> v1.Camera
 	7,  // 12: v1.GetCameraResponse.connection:type_name -> v1.CameraConnection
-	19, // 13: v1.GetCameraResponse.capabilities:type_name -> v1.CameraCapabilities
-	26, // 14: v1.ListCamerasRequest.mode_filter:type_name -> v1.CameraMode
-	28, // 15: v1.ListCamerasRequest.status_filter:type_name -> v1.CameraStatus
-	27, // 16: v1.ListCamerasResponse.cameras:type_name -> v1.Camera
-	26, // 17: v1.SwitchCameraModeRequest.target_mode:type_name -> v1.CameraMode
-	27, // 18: v1.SwitchCameraModeResponse.camera:type_name -> v1.Camera
-	29, // 19: v1.HeartbeatRequest.current_ptz:type_name -> v1.PTZParameters
-	28, // 20: v1.HeartbeatRequest.status:type_name -> v1.CameraStatus
-	28, // 21: v1.StreamConnectionStatusResponse.previous_status:type_name -> v1.CameraStatus
-	28, // 22: v1.StreamConnectionStatusResponse.current_status:type_name -> v1.CameraStatus
-	20, // 23: v1.CameraCapabilities.supported_resolutions:type_name -> v1.Resolution
-	19, // 24: v1.GetCameraCapabilitiesResponse.capabilities:type_name -> v1.CameraCapabilities
-	1,  // 25: v1.CameraService.RegisterCamera:input_type -> v1.RegisterCameraRequest
-	3,  // 26: v1.CameraService.UnregisterCamera:input_type -> v1.UnregisterCameraRequest
-	5,  // 27: v1.CameraService.UpdateCamera:input_type -> v1.UpdateCameraRequest
-	9,  // 28: v1.CameraService.GetCamera:input_type -> v1.GetCameraRequest
-	11, // 29: v1.CameraService.ListCameras:input_type -> v1.ListCamerasRequest
-	13, // 30: v1.CameraService.SwitchCameraMode:input_type -> v1.SwitchCameraModeRequest
-	15, // 31: v1.CameraService.Heartbeat:input_type -> v1.HeartbeatRequest
-	17, // 32: v1.CameraService.StreamConnectionStatus:input_type -> v1.StreamConnectionStatusRequest
-	21, // 33: v1.CameraService.GetCameraCapabilities:input_type -> v1.GetCameraCapabilitiesRequest
-	2,  // 34: v1.CameraService.RegisterCamera:output_type -> v1.RegisterCameraResponse
-	4,  // 35: v1.CameraService.UnregisterCamera:output_type -> v1.UnregisterCameraResponse
-	6,  // 36: v1.CameraService.UpdateCamera:output_type -> v1.UpdateCameraResponse
-	10, // 37: v1.CameraService.GetCamera:output_type -> v1.GetCameraResponse
-	12, // 38: v1.CameraService.ListCameras:output_type -> v1.ListCamerasResponse
-	14, // 39: v1.CameraService.SwitchCameraMode:output_type -> v1.SwitchCameraModeResponse
-	16, // 40: v1.CameraService.Heartbeat:output_type -> v1.HeartbeatResponse
-	18, // 41: v1.CameraService.StreamConnectionStatus:output_type -> v1.StreamConnectionStatusResponse
-	22, // 42: v1.CameraService.GetCameraCapabilities:output_type -> v1.GetCameraCapabilitiesResponse
-	34, // [34:43] is the sub-list for method output_type
-	25, // [25:34] is the sub-list for method input_type
-	25, // [25:25] is the sub-list for extension type_name
-	25, // [25:25] is the sub-list for extension extendee
-	0,  // [0:25] is the sub-list for field type_name
+	17, // 13: v1.GetCameraResponse.capabilities:type_name -> v1.CameraCapabilities
+	22, // 14: v1.ListCamerasRequest.mode_filter:type_name -> v1.CameraMode
+	24, // 15: v1.ListCamerasRequest.status_filter:type_name -> v1.CameraStatus
+	23, // 16: v1.ListCamerasResponse.cameras:type_name -> v1.Camera
+	22, // 17: v1.SwitchCameraModeRequest.target_mode:type_name -> v1.CameraMode
+	23, // 18: v1.SwitchCameraModeResponse.camera:type_name -> v1.Camera
+	24, // 19: v1.StreamConnectionStatusResponse.previous_status:type_name -> v1.CameraStatus
+	24, // 20: v1.StreamConnectionStatusResponse.current_status:type_name -> v1.CameraStatus
+	18, // 21: v1.CameraCapabilities.supported_resolutions:type_name -> v1.Resolution
+	1,  // 22: v1.CameraService.RegisterCamera:input_type -> v1.RegisterCameraRequest
+	3,  // 23: v1.CameraService.UnregisterCamera:input_type -> v1.UnregisterCameraRequest
+	5,  // 24: v1.CameraService.UpdateCamera:input_type -> v1.UpdateCameraRequest
+	9,  // 25: v1.CameraService.GetCamera:input_type -> v1.GetCameraRequest
+	11, // 26: v1.CameraService.ListCameras:input_type -> v1.ListCamerasRequest
+	13, // 27: v1.CameraService.SwitchCameraMode:input_type -> v1.SwitchCameraModeRequest
+	15, // 28: v1.CameraService.StreamConnectionStatus:input_type -> v1.StreamConnectionStatusRequest
+	2,  // 29: v1.CameraService.RegisterCamera:output_type -> v1.RegisterCameraResponse
+	4,  // 30: v1.CameraService.UnregisterCamera:output_type -> v1.UnregisterCameraResponse
+	6,  // 31: v1.CameraService.UpdateCamera:output_type -> v1.UpdateCameraResponse
+	10, // 32: v1.CameraService.GetCamera:output_type -> v1.GetCameraResponse
+	12, // 33: v1.CameraService.ListCameras:output_type -> v1.ListCamerasResponse
+	14, // 34: v1.CameraService.SwitchCameraMode:output_type -> v1.SwitchCameraModeResponse
+	16, // 35: v1.CameraService.StreamConnectionStatus:output_type -> v1.StreamConnectionStatusResponse
+	29, // [29:36] is the sub-list for method output_type
+	22, // [22:29] is the sub-list for method input_type
+	22, // [22:22] is the sub-list for extension type_name
+	22, // [22:22] is the sub-list for extension extendee
+	0,  // [0:22] is the sub-list for field type_name
 }
 
 func init() { file_v1_cd_service_proto_init() }
@@ -1704,7 +1465,6 @@ func file_v1_cd_service_proto_init() {
 	if File_v1_cd_service_proto != nil {
 		return
 	}
-	file_v1_cinematography_proto_init()
 	file_v1_cr_service_proto_init()
 	file_v1_cd_service_proto_msgTypes[4].OneofWrappers = []any{}
 	type x struct{}
@@ -1713,7 +1473,7 @@ func file_v1_cd_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_cd_service_proto_rawDesc), len(file_v1_cd_service_proto_rawDesc)),
 			NumEnums:      1,
-			NumMessages:   25,
+			NumMessages:   21,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
