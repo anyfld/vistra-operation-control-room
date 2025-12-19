@@ -295,11 +295,11 @@ func (h *MDHandler) ReceiveFromLLM(
 
 		if prompt != "" {
 			if err := stream.Send(&protov1.ReceiveFromLLMResponse{
-				RequestId:    requestID,
-				Text:         prompt,
-				Instruction:  nil,
-				IsComplete:   true,
-				TimestampMs:  time.Now().UnixMilli(),
+				RequestId:   requestID,
+				Text:        prompt,
+				Instruction: nil,
+				IsComplete:  true,
+				TimestampMs: time.Now().UnixMilli(),
 			}); err != nil {
 				return err
 			}

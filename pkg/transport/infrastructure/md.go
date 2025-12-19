@@ -9,8 +9,8 @@ import (
 )
 
 type MDRepo struct {
-	mu                        sync.RWMutex
-	videoOutputs              map[string]*protov1.VideoOutput
+	mu                         sync.RWMutex
+	videoOutputs               map[string]*protov1.VideoOutput
 	cinematographyInstructions map[string]*protov1.CinematographyInstruction
 	llmRequests                map[string]*LLMRequest
 }
@@ -24,10 +24,10 @@ type LLMRequest struct {
 
 func NewMDRepo() *MDRepo {
 	return &MDRepo{
-		mu:                        sync.RWMutex{},
-		videoOutputs:              make(map[string]*protov1.VideoOutput),
+		mu:                         sync.RWMutex{},
+		videoOutputs:               make(map[string]*protov1.VideoOutput),
 		cinematographyInstructions: make(map[string]*protov1.CinematographyInstruction),
-		llmRequests:               make(map[string]*LLMRequest),
+		llmRequests:                make(map[string]*LLMRequest),
 	}
 }
 
@@ -41,12 +41,12 @@ func (r *MDRepo) ConfigureVideoOutput(config *protov1.VideoOutputConfig) *protov
 	}
 
 	output := &protov1.VideoOutput{
-		Config:                 config,
-		Status:                  protov1.VideoOutputStatus_VIDEO_OUTPUT_STATUS_IDLE,
-		CurrentSourceCameraId:   "",
-		StreamingStartedAtMs:   0,
-		BytesSent:               0,
-		ErrorMessage:            "",
+		Config:                config,
+		Status:                protov1.VideoOutputStatus_VIDEO_OUTPUT_STATUS_IDLE,
+		CurrentSourceCameraId: "",
+		StreamingStartedAtMs:  0,
+		BytesSent:             0,
+		ErrorMessage:          "",
 	}
 
 	r.videoOutputs[outputID] = output
@@ -166,8 +166,8 @@ func (r *MDRepo) ReceiveCinematographyInstruction(
 	r.cinematographyInstructions[instructionID] = instruction
 
 	return &protov1.ReceiveCinematographyInstructionResponse{
-		Accepted:      true,
-		InstructionId: instructionID,
+		Accepted:        true,
+		InstructionId:   instructionID,
 		RejectionReason: "",
 	}, nil
 }

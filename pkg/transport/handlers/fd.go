@@ -140,7 +140,7 @@ func (h *FDHandler) StreamPatternMatchResults(
 		detected := []*protov1.DetectedSubject{}
 		for _, subject := range targetSubjects {
 			detected = append(detected, &protov1.DetectedSubject{
-				Subject: subject,
+				Subject:    subject,
 				Confidence: 0.85,
 				DetectedBox: &protov1.BoundingBox{
 					X:      0.2,
@@ -176,10 +176,10 @@ func (h *FDHandler) CalculateFraming(
 	}
 
 	return connect.NewResponse(&protov1.CalculateFramingResponse{
-		CalculatedPtz:      ptz,
+		CalculatedPtz:       ptz,
 		EstimatedMoveTimeMs: timeMs,
-		Success:            success,
-		ErrorMessage:       errMsg,
+		Success:             success,
+		ErrorMessage:        errMsg,
 	}), nil
 }
 

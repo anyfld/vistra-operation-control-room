@@ -9,10 +9,10 @@ import (
 )
 
 type FDRepo struct {
-	mu                    sync.RWMutex
-	patternMatchingSessions map[string]*PatternMatchingSession
-	controlCommands          map[string]*protov1.ControlCommand
-	cameraStates             map[string]*protov1.CameraState
+	mu                         sync.RWMutex
+	patternMatchingSessions    map[string]*PatternMatchingSession
+	controlCommands            map[string]*protov1.ControlCommand
+	cameraStates               map[string]*protov1.CameraState
 	cinematographyInstructions map[string]*protov1.CinematographyInstruction
 }
 
@@ -26,10 +26,10 @@ type PatternMatchingSession struct {
 
 func NewFDRepo() *FDRepo {
 	return &FDRepo{
-		mu:                    sync.RWMutex{},
-		patternMatchingSessions: make(map[string]*PatternMatchingSession),
-		controlCommands:          make(map[string]*protov1.ControlCommand),
-		cameraStates:             make(map[string]*protov1.CameraState),
+		mu:                         sync.RWMutex{},
+		patternMatchingSessions:    make(map[string]*PatternMatchingSession),
+		controlCommands:            make(map[string]*protov1.ControlCommand),
+		cameraStates:               make(map[string]*protov1.CameraState),
 		cinematographyInstructions: make(map[string]*protov1.CinematographyInstruction),
 	}
 }
@@ -45,7 +45,7 @@ func (r *FDRepo) ProcessImage(
 
 	for _, target := range targetSubjects {
 		detected = append(detected, &protov1.DetectedSubject{
-			Subject: target,
+			Subject:    target,
 			Confidence: 0.85,
 			DetectedBox: &protov1.BoundingBox{
 				X:      0.2,
@@ -117,10 +117,10 @@ func (r *FDRepo) CalculateFraming(
 	}
 
 	calculatedPtz := &protov1.PTZParameters{
-		Pan:      currentPtz.Pan + 10.0,
-		Tilt:     currentPtz.Tilt + 5.0,
-		Zoom:     currentPtz.Zoom + 0.5,
-		PanSpeed: 0.5,
+		Pan:       currentPtz.Pan + 10.0,
+		Tilt:      currentPtz.Tilt + 5.0,
+		Zoom:      currentPtz.Zoom + 0.5,
+		PanSpeed:  0.5,
 		TiltSpeed: 0.5,
 		ZoomSpeed: 0.5,
 	}
@@ -150,10 +150,10 @@ func (r *FDRepo) SendControlCommand(command *protov1.ControlCommand) *protov1.Co
 	}
 
 	return &protov1.ControlCommandResult{
-		CommandId:      commandID,
-		Success:        true,
-		ErrorMessage:   "",
-		ResultingPtz:   resultingPtz,
+		CommandId:       commandID,
+		Success:         true,
+		ErrorMessage:    "",
+		ResultingPtz:    resultingPtz,
 		ExecutionTimeMs: 100,
 	}
 }
