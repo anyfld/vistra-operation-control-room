@@ -236,6 +236,11 @@ func (h *FDHandler) StreamControlCommands(
 			return nil, ctx.Err()
 		case event, ok := <-commandCh:
 			if !ok || event == nil {
+				log.Printf(
+					"fd stream control commands subscription closed: camera_id=%s",
+					cameraID,
+				)
+
 				return connect.NewResponse(&protov1.StreamControlCommandsResponse{
 					Message: &protov1.StreamControlCommandsResponse_Status{
 						Status: &protov1.StreamControlCommandsStatus{
@@ -248,6 +253,12 @@ func (h *FDHandler) StreamControlCommands(
 			}
 
 			if event.Result != nil {
+				log.Printf(
+					"fd stream control commands result event: camera_id=%s command_id=%s",
+					cameraID,
+					event.Result.GetCommandId(),
+				)
+
 				return connect.NewResponse(&protov1.StreamControlCommandsResponse{
 					Message: &protov1.StreamControlCommandsResponse_Result{
 						Result: event.Result,
@@ -257,6 +268,12 @@ func (h *FDHandler) StreamControlCommands(
 			}
 
 			if event.Command != nil {
+				log.Printf(
+					"fd stream control commands command event: camera_id=%s command_id=%s",
+					cameraID,
+					event.Command.GetCommandId(),
+				)
+
 				return connect.NewResponse(&protov1.StreamControlCommandsResponse{
 					Message: &protov1.StreamControlCommandsResponse_Command{
 						Command: event.Command,
@@ -264,6 +281,11 @@ func (h *FDHandler) StreamControlCommands(
 					TimestampMs: event.TimestampMs,
 				}), nil
 			}
+
+			log.Printf(
+				"fd stream control commands event without payload: camera_id=%s",
+				cameraID,
+			)
 
 			return connect.NewResponse(&protov1.StreamControlCommandsResponse{
 				Message: &protov1.StreamControlCommandsResponse_Status{
