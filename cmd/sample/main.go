@@ -20,6 +20,11 @@ const (
 	defaultServerURL = "http://localhost:8080"
 )
 
+type ptzScenarioStep struct {
+	description string
+	ptz         *protov1.PTZParameters
+}
+
 func main() {
 	serverURL := flag.String("server", defaultServerURL, "Server URL")
 	flag.Parse()
@@ -68,7 +73,7 @@ func printMenu() {
 	fmt.Println("\n=== カメラ操作メニュー ===")
 	fmt.Println("1. カメラを追加")
 	fmt.Println("2. カメラ一覧を表示")
-	fmt.Println("3. PTZコマンドを送信")
+	fmt.Println("3. PTZサンプルシナリオを実行")
 	fmt.Println("4. 終了")
 	fmt.Println()
 }
@@ -150,7 +155,7 @@ func sendPTZCommand(
 	cameraClient protov1connect.CameraServiceClient,
 	scanner *bufio.Scanner,
 ) {
-	fmt.Println("\n--- PTZコマンド送信 ---")
+	fmt.Println("\n--- PTZサンプルシナリオ実行 ---")
 
 	resp, err := cameraClient.ListCameras(ctx, connect.NewRequest(&protov1.ListCamerasRequest{}))
 	if err != nil {
@@ -183,131 +188,93 @@ func sendPTZCommand(
 
 	selectedCamera := cameras[choice-1]
 
-	fmt.Println("\nPTZコマンドタイプ:")
-	fmt.Println("1. 絶対位置指定 (PTZ_ABSOLUTE)")
-	fmt.Println("2. 相対位置指定 (PTZ_RELATIVE)")
-	fmt.Println("3. 連続移動 (PTZ_CONTINUOUS)")
-	fmt.Println("4. 停止 (PTZ_STOP)")
-	fmt.Print("コマンドタイプを選択: ")
+	fmt.Println("\n選択したカメラでPTZサンプルシナリオを実行します。")
 
-	if !scanner.Scan() {
-		return
-	}
-
-	cmdTypeStr := strings.TrimSpace(scanner.Text())
-	var cmdType protov1.ControlCommandType
-
-	switch cmdTypeStr {
-	case "1":
-		cmdType = protov1.ControlCommandType_CONTROL_COMMAND_TYPE_PTZ_ABSOLUTE
-	case "2":
-		cmdType = protov1.ControlCommandType_CONTROL_COMMAND_TYPE_PTZ_RELATIVE
-	case "3":
-		cmdType = protov1.ControlCommandType_CONTROL_COMMAND_TYPE_PTZ_CONTINUOUS
-	case "4":
-		cmdType = protov1.ControlCommandType_CONTROL_COMMAND_TYPE_PTZ_STOP
-	default:
-		fmt.Println("無効な選択です。")
-		return
-	}
-
-	var ptz *protov1.PTZParameters
-
-	if cmdType != protov1.ControlCommandType_CONTROL_COMMAND_TYPE_PTZ_STOP {
-		ptz = &protov1.PTZParameters{}
-
-		fmt.Print("Pan角度 (-180.0 ~ 180.0): ")
-		if scanner.Scan() {
-			if panStr := strings.TrimSpace(scanner.Text()); panStr != "" {
-				if pan, err := strconv.ParseFloat(panStr, 32); err == nil {
-					ptz.Pan = float32(pan)
-				}
-			}
-		}
-
-		fmt.Print("Tilt角度 (-90.0 ~ 90.0): ")
-		if scanner.Scan() {
-			if tiltStr := strings.TrimSpace(scanner.Text()); tiltStr != "" {
-				if tilt, err := strconv.ParseFloat(tiltStr, 32); err == nil {
-					ptz.Tilt = float32(tilt)
-				}
-			}
-		}
-
-		fmt.Print("Zoom倍率 (1.0 ~ 10.0): ")
-		if scanner.Scan() {
-			if zoomStr := strings.TrimSpace(scanner.Text()); zoomStr != "" {
-				if zoom, err := strconv.ParseFloat(zoomStr, 32); err == nil {
-					ptz.Zoom = float32(zoom)
-				}
-			}
-		}
-
-		fmt.Print("Pan速度 (0.0 ~ 1.0): ")
-		if scanner.Scan() {
-			if panSpeedStr := strings.TrimSpace(scanner.Text()); panSpeedStr != "" {
-				if panSpeed, err := strconv.ParseFloat(panSpeedStr, 32); err == nil {
-					ptz.PanSpeed = float32(panSpeed)
-				}
-			}
-		}
-
-		fmt.Print("Tilt速度 (0.0 ~ 1.0): ")
-		if scanner.Scan() {
-			if tiltSpeedStr := strings.TrimSpace(scanner.Text()); tiltSpeedStr != "" {
-				if tiltSpeed, err := strconv.ParseFloat(tiltSpeedStr, 32); err == nil {
-					ptz.TiltSpeed = float32(tiltSpeed)
-				}
-			}
-		}
-
-		fmt.Print("Zoom速度 (0.0 ~ 1.0): ")
-		if scanner.Scan() {
-			if zoomSpeedStr := strings.TrimSpace(scanner.Text()); zoomSpeedStr != "" {
-				if zoomSpeed, err := strconv.ParseFloat(zoomSpeedStr, 32); err == nil {
-					ptz.ZoomSpeed = float32(zoomSpeed)
-				}
-			}
-		}
-	}
-
-	command := &protov1.ControlCommand{
-		CommandId:     fmt.Sprintf("cmd-%d", time.Now().UnixNano()),
-		CameraId:      selectedCamera.GetId(),
-		Type:          cmdType,
-		PtzParameters: ptz,
-		TimeoutMs:     5000,
-	}
-
-	cmdResp, err := fdClient.SendControlCommand(
+	getResp, err := cameraClient.GetCamera(
 		ctx,
-		connect.NewRequest(&protov1.SendControlCommandRequest{
-			Command: command,
+		connect.NewRequest(&protov1.GetCameraRequest{
+			CameraId: selectedCamera.GetId(),
 		}),
 	)
 	if err != nil {
-		fmt.Printf("エラー: PTZコマンドの送信に失敗しました: %v\n", err)
+		fmt.Printf("エラー: カメラ能力情報の取得に失敗しました: %v\n", err)
 		return
 	}
 
-	result := cmdResp.Msg.GetResult()
-	if result == nil {
-		fmt.Println("エラー: コマンド結果が nil です。")
-		return
+	capabilities := getResp.Msg.GetCapabilities()
+	if capabilities == nil {
+		fmt.Println(
+			"警告: カメラ能力情報がないため、デフォルトのPTZシナリオを使用します。",
+		)
 	}
 
-	fmt.Println("\n✓ PTZコマンドが送信されました:")
-	fmt.Printf("  コマンドID: %s\n", result.GetCommandId())
-	fmt.Printf("  成功: %v\n", result.GetSuccess())
-	if result.GetErrorMessage() != "" {
-		fmt.Printf("  エラーメッセージ: %s\n", result.GetErrorMessage())
+	scenario := buildPTZScenario(capabilities)
+
+	for i, step := range scenario {
+		fmt.Printf("\n%s\n", step.description)
+
+		command := &protov1.ControlCommand{
+			CommandId: fmt.Sprintf(
+				"cmd-%d-%d",
+				time.Now().UnixNano(),
+				i+1,
+			),
+			CameraId:      selectedCamera.GetId(),
+			Type:          protov1.ControlCommandType_CONTROL_COMMAND_TYPE_PTZ_ABSOLUTE,
+			PtzParameters: step.ptz,
+			TimeoutMs:     5000,
+		}
+
+		cmdResp, err := fdClient.SendControlCommand(
+			ctx,
+			connect.NewRequest(&protov1.SendControlCommandRequest{
+				Command: command,
+			}),
+		)
+		if err != nil {
+			fmt.Printf(
+				"エラー: シナリオ %d のPTZコマンド送信に失敗しました: %v\n",
+				i+1,
+				err,
+			)
+			return
+		}
+
+		result := cmdResp.Msg.GetResult()
+		if result == nil {
+			fmt.Println("エラー: コマンド結果が nil です。")
+			return
+		}
+
+		fmt.Printf("  コマンドID: %s\n", result.GetCommandId())
+		fmt.Printf("  成功: %v\n", result.GetSuccess())
+		if result.GetErrorMessage() != "" {
+			fmt.Printf(
+				"  エラーメッセージ: %s\n",
+				result.GetErrorMessage(),
+			)
+		}
+		if result.GetResultingPtz() != nil {
+			ptz := result.GetResultingPtz()
+			fmt.Printf(
+				"  結果PTZ: Pan=%.2f, Tilt=%.2f, Zoom=%.2f\n",
+				ptz.GetPan(),
+				ptz.GetTilt(),
+				ptz.GetZoom(),
+			)
+		}
+		fmt.Printf(
+			"  実行時間: %d ms\n",
+			result.GetExecutionTimeMs(),
+		)
+
+		if i != len(scenario)-1 {
+			fmt.Println("  次のステップまで 1 秒待機します...")
+			time.Sleep(1 * time.Second)
+		}
 	}
-	if result.GetResultingPtz() != nil {
-		ptz := result.GetResultingPtz()
-		fmt.Printf("  結果PTZ: Pan=%.2f, Tilt=%.2f, Zoom=%.2f\n",
-			ptz.GetPan(), ptz.GetTilt(), ptz.GetZoom())
-	}
-	fmt.Printf("  実行時間: %d ms\n", result.GetExecutionTimeMs())
+
+	fmt.Println("\n✓ PTZサンプルシナリオが完了しました。")
 }
 
 func generateSampleCameras(count int) []*protov1.RegisterCameraRequest {
@@ -412,4 +379,104 @@ func generateSampleCameras(count int) []*protov1.RegisterCameraRequest {
 	}
 
 	return cameras[:count]
+}
+
+func buildPTZScenario(
+	capabilities *protov1.CameraCapabilities,
+) []ptzScenarioStep {
+	const (
+		defaultPanMin  = -180.0
+		defaultPanMax  = 180.0
+		defaultTiltMin = -45.0
+		defaultTiltMax = 45.0
+		defaultZoomMin = 1.0
+		defaultZoomMax = 5.0
+	)
+
+	panMin := defaultPanMin
+	panMax := defaultPanMax
+	tiltMin := defaultTiltMin
+	tiltMax := defaultTiltMax
+	zoomMin := defaultZoomMin
+	zoomMax := defaultZoomMax
+
+	if capabilities != nil && capabilities.GetSupportsPtz() {
+		if capabilities.GetPanMin() != 0 || capabilities.GetPanMax() != 0 {
+			panMin = float64(capabilities.GetPanMin())
+			panMax = float64(capabilities.GetPanMax())
+		}
+		if capabilities.GetTiltMin() != 0 || capabilities.GetTiltMax() != 0 {
+			tiltMin = float64(capabilities.GetTiltMin())
+			tiltMax = float64(capabilities.GetTiltMax())
+		}
+		if capabilities.GetZoomMin() != 0 || capabilities.GetZoomMax() != 0 {
+			zoomMin = float64(capabilities.GetZoomMin())
+			zoomMax = float64(capabilities.GetZoomMax())
+		}
+	}
+
+	panCenter := (panMin + panMax) / 2.0
+	tiltCenter := (tiltMin + tiltMax) / 2.0
+	zoomRange := zoomMax - zoomMin
+
+	if zoomRange <= 0 {
+		zoomRange = defaultZoomMax - defaultZoomMin
+		zoomMin = defaultZoomMin
+		zoomMax = defaultZoomMax
+	}
+
+	panRight := panCenter + (panMax-panCenter)*0.5
+	panLeft := panCenter + (panMin-panCenter)*0.5
+	tiltSlightDown := tiltCenter - (tiltCenter-tiltMin)*0.2
+
+	zoomWide := zoomMin
+	zoomMedium := zoomMin + zoomRange*0.5
+	zoomClose := zoomMin + zoomRange*0.8
+
+	return []ptzScenarioStep{
+		{
+			description: "1) ワイドショット (中央・広角)",
+			ptz: &protov1.PTZParameters{
+				Pan:       float32(panCenter),
+				Tilt:      float32(tiltCenter),
+				Zoom:      float32(zoomWide),
+				PanSpeed:  0.5,
+				TiltSpeed: 0.5,
+				ZoomSpeed: 0.5,
+			},
+		},
+		{
+			description: "2) 右寄りクローズアップ",
+			ptz: &protov1.PTZParameters{
+				Pan:       float32(panRight),
+				Tilt:      float32(tiltSlightDown),
+				Zoom:      float32(zoomClose),
+				PanSpeed:  0.6,
+				TiltSpeed: 0.6,
+				ZoomSpeed: 0.6,
+			},
+		},
+		{
+			description: "3) 左寄りミディアムショット",
+			ptz: &protov1.PTZParameters{
+				Pan:       float32(panLeft),
+				Tilt:      float32(tiltCenter),
+				Zoom:      float32(zoomMedium),
+				PanSpeed:  0.5,
+				TiltSpeed: 0.5,
+				ZoomSpeed: 0.5,
+			},
+		},
+		{
+			description: "4) 中央に戻す",
+			ptz: &protov1.PTZParameters{
+				Pan:       float32(panCenter),
+				Tilt:      float32(tiltCenter),
+				Zoom:      float32(zoomMedium),
+				PanSpeed:  0.5,
+				TiltSpeed: 0.5,
+				ZoomSpeed: 0.5,
+			},
+		},
+	}
 }
