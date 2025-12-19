@@ -53,9 +53,6 @@ const (
 	// FDServiceCalculateFramingProcedure is the fully-qualified name of the FDService's
 	// CalculateFraming RPC.
 	FDServiceCalculateFramingProcedure = "/v1.FDService/CalculateFraming"
-	// FDServiceSendControlCommandProcedure is the fully-qualified name of the FDService's
-	// SendControlCommand RPC.
-	FDServiceSendControlCommandProcedure = "/v1.FDService/SendControlCommand"
 	// FDServiceStreamControlCommandsProcedure is the fully-qualified name of the FDService's
 	// StreamControlCommands RPC.
 	FDServiceStreamControlCommandsProcedure = "/v1.FDService/StreamControlCommands"
@@ -74,8 +71,7 @@ type FDServiceClient interface {
 	// 画角計算
 	CalculateFraming(context.Context, *connect.Request[v1.CalculateFramingRequest]) (*connect.Response[v1.CalculateFramingResponse], error)
 	// CO への制御コマンド
-	SendControlCommand(context.Context, *connect.Request[v1.SendControlCommandRequest]) (*connect.Response[v1.SendControlCommandResponse], error)
-	StreamControlCommands(context.Context) *connect.BidiStreamForClient[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse]
+	StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest]) (*connect.Response[v1.StreamControlCommandsResponse], error)
 }
 
 // NewFDServiceClient constructs a client for the v1.FDService service. By default, it uses the
@@ -131,12 +127,6 @@ func NewFDServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...c
 			connect.WithSchema(fDServiceMethods.ByName("CalculateFraming")),
 			connect.WithClientOptions(opts...),
 		),
-		sendControlCommand: connect.NewClient[v1.SendControlCommandRequest, v1.SendControlCommandResponse](
-			httpClient,
-			baseURL+FDServiceSendControlCommandProcedure,
-			connect.WithSchema(fDServiceMethods.ByName("SendControlCommand")),
-			connect.WithClientOptions(opts...),
-		),
 		streamControlCommands: connect.NewClient[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse](
 			httpClient,
 			baseURL+FDServiceStreamControlCommandsProcedure,
@@ -155,7 +145,6 @@ type fDServiceClient struct {
 	stopPatternMatching              *connect.Client[v1.StopPatternMatchingRequest, v1.StopPatternMatchingResponse]
 	streamPatternMatchResults        *connect.Client[v1.StreamPatternMatchResultsRequest, v1.StreamPatternMatchResultsResponse]
 	calculateFraming                 *connect.Client[v1.CalculateFramingRequest, v1.CalculateFramingResponse]
-	sendControlCommand               *connect.Client[v1.SendControlCommandRequest, v1.SendControlCommandResponse]
 	streamControlCommands            *connect.Client[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse]
 }
 
@@ -194,14 +183,9 @@ func (c *fDServiceClient) CalculateFraming(ctx context.Context, req *connect.Req
 	return c.calculateFraming.CallUnary(ctx, req)
 }
 
-// SendControlCommand calls v1.FDService.SendControlCommand.
-func (c *fDServiceClient) SendControlCommand(ctx context.Context, req *connect.Request[v1.SendControlCommandRequest]) (*connect.Response[v1.SendControlCommandResponse], error) {
-	return c.sendControlCommand.CallUnary(ctx, req)
-}
-
 // StreamControlCommands calls v1.FDService.StreamControlCommands.
-func (c *fDServiceClient) StreamControlCommands(ctx context.Context) *connect.BidiStreamForClient[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse] {
-	return c.streamControlCommands.CallBidiStream(ctx)
+func (c *fDServiceClient) StreamControlCommands(ctx context.Context, req *connect.Request[v1.StreamControlCommandsRequest]) (*connect.Response[v1.StreamControlCommandsResponse], error) {
+	return c.streamControlCommands.CallUnary(ctx, req)
 }
 
 // FDServiceHandler is an implementation of the v1.FDService service.
@@ -217,8 +201,7 @@ type FDServiceHandler interface {
 	// 画角計算
 	CalculateFraming(context.Context, *connect.Request[v1.CalculateFramingRequest]) (*connect.Response[v1.CalculateFramingResponse], error)
 	// CO への制御コマンド
-	SendControlCommand(context.Context, *connect.Request[v1.SendControlCommandRequest]) (*connect.Response[v1.SendControlCommandResponse], error)
-	StreamControlCommands(context.Context, *connect.BidiStream[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse]) error
+	StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest]) (*connect.Response[v1.StreamControlCommandsResponse], error)
 }
 
 // NewFDServiceHandler builds an HTTP handler from the service implementation. It returns the path
@@ -270,13 +253,7 @@ func NewFDServiceHandler(svc FDServiceHandler, opts ...connect.HandlerOption) (s
 		connect.WithSchema(fDServiceMethods.ByName("CalculateFraming")),
 		connect.WithHandlerOptions(opts...),
 	)
-	fDServiceSendControlCommandHandler := connect.NewUnaryHandler(
-		FDServiceSendControlCommandProcedure,
-		svc.SendControlCommand,
-		connect.WithSchema(fDServiceMethods.ByName("SendControlCommand")),
-		connect.WithHandlerOptions(opts...),
-	)
-	fDServiceStreamControlCommandsHandler := connect.NewBidiStreamHandler(
+	fDServiceStreamControlCommandsHandler := connect.NewUnaryHandler(
 		FDServiceStreamControlCommandsProcedure,
 		svc.StreamControlCommands,
 		connect.WithSchema(fDServiceMethods.ByName("StreamControlCommands")),
@@ -298,8 +275,6 @@ func NewFDServiceHandler(svc FDServiceHandler, opts ...connect.HandlerOption) (s
 			fDServiceStreamPatternMatchResultsHandler.ServeHTTP(w, r)
 		case FDServiceCalculateFramingProcedure:
 			fDServiceCalculateFramingHandler.ServeHTTP(w, r)
-		case FDServiceSendControlCommandProcedure:
-			fDServiceSendControlCommandHandler.ServeHTTP(w, r)
 		case FDServiceStreamControlCommandsProcedure:
 			fDServiceStreamControlCommandsHandler.ServeHTTP(w, r)
 		default:
@@ -339,10 +314,6 @@ func (UnimplementedFDServiceHandler) CalculateFraming(context.Context, *connect.
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.CalculateFraming is not implemented"))
 }
 
-func (UnimplementedFDServiceHandler) SendControlCommand(context.Context, *connect.Request[v1.SendControlCommandRequest]) (*connect.Response[v1.SendControlCommandResponse], error) {
-	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.SendControlCommand is not implemented"))
-}
-
-func (UnimplementedFDServiceHandler) StreamControlCommands(context.Context, *connect.BidiStream[v1.StreamControlCommandsRequest, v1.StreamControlCommandsResponse]) error {
-	return connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.StreamControlCommands is not implemented"))
+func (UnimplementedFDServiceHandler) StreamControlCommands(context.Context, *connect.Request[v1.StreamControlCommandsRequest]) (*connect.Response[v1.StreamControlCommandsResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.FDService.StreamControlCommands is not implemented"))
 }
