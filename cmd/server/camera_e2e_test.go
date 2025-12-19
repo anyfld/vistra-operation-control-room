@@ -50,7 +50,7 @@ func TestRegisterAndGetCameraE2E(t *testing.T) {
 	server, client := newCameraTestServer(t)
 	defer server.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 
 	registerReq := &protov1.RegisterCameraRequest{
@@ -80,7 +80,7 @@ func TestRegisterAndGetCameraE2E(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, registerResp)
 	require.NotNil(t, registerResp.Msg)
-	require.NotNil(t, registerResp.Msg.Camera)
+	require.NotNil(t, registerResp.Msg.GetCamera())
 
 	registered := registerResp.Msg.GetCamera()
 	require.NotEmpty(t, registered.GetId())
@@ -103,7 +103,7 @@ func TestRegisterAndGetCameraE2E(t *testing.T) {
 	require.NoError(t, err)
 	require.NotNil(t, getResp)
 	require.NotNil(t, getResp.Msg)
-	require.NotNil(t, getResp.Msg.Camera)
+	require.NotNil(t, getResp.Msg.GetCamera())
 
 	got := getResp.Msg.GetCamera()
 	require.Equal(t, registered.GetId(), got.GetId())
@@ -117,7 +117,7 @@ func TestRegisterAndGetCameraE2E(t *testing.T) {
 	)
 	require.Equal(t, registerReq.GetMetadata(), got.GetMetadata())
 
-	require.NotNil(t, getResp.Msg.Connection)
+	require.NotNil(t, getResp.Msg.GetConnection())
 	require.Equal(
 		t,
 		registerReq.GetConnection().GetType(),
@@ -134,7 +134,7 @@ func TestRegisterAndGetCameraE2E(t *testing.T) {
 		getResp.Msg.GetConnection().GetPort(),
 	)
 
-	require.NotNil(t, getResp.Msg.Capabilities)
+	require.NotNil(t, getResp.Msg.GetCapabilities())
 	require.Equal(
 		t,
 		registerReq.GetCapabilities().GetSupportsPtz(),

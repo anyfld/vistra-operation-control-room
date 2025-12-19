@@ -77,6 +77,7 @@ func setupHandlers() *http.ServeMux {
 	registerCameraService(mux)
 	registerCRService(mux)
 	registerFDService(mux)
+	registerPTZService(mux)
 
 	return mux
 }
@@ -111,7 +112,17 @@ func registerFDService(mux *http.ServeMux) {
 
 	fdUC := usecase.NewFDUsecase(fdRepo)
 	cameraUC := usecase.NewCameraUsecase(cameraRepo)
+
 	if path, h := protov1connect.NewFDServiceHandler(handlers.NewFDHandler(fdUC, cameraUC)); path != "" {
+		mux.Handle(path, h)
+	}
+}
+
+func registerPTZService(mux *http.ServeMux) {
+	ptzRepo := infrastructure.NewPTZRepo()
+
+	ptzUC := usecase.NewPTZUsecase(ptzRepo)
+	if path, h := protov1connect.NewPTZServiceHandler(handlers.NewPTZHandler(ptzUC)); path != "" {
 		mux.Handle(path, h)
 	}
 }

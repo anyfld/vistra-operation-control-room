@@ -30,6 +30,7 @@ func (h *FDHandler) ReportCameraStateHTTP() http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.Method != http.MethodPost {
 			http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+
 			return
 		}
 
@@ -38,22 +39,26 @@ func (h *FDHandler) ReportCameraStateHTTP() http.Handler {
 		body, err := io.ReadAll(request.Body)
 		if err != nil {
 			http.Error(writer, "failed to read request body", http.StatusBadRequest)
+
 			return
 		}
 
 		state := &protov1.CameraState{}
 		if err := protojson.Unmarshal(body, state); err != nil {
 			http.Error(writer, "invalid request body", http.StatusBadRequest)
+
 			return
 		}
 
 		if state.GetCameraId() == "" {
 			http.Error(writer, "camera_id is required", http.StatusBadRequest)
+
 			return
 		}
 
 		if _, err := fallback.uc.ReportCameraState(request.Context(), state); err != nil {
 			http.Error(writer, "failed to report camera state", http.StatusInternalServerError)
+
 			return
 		}
 
@@ -66,6 +71,7 @@ func (h *FDHandler) ReportCameraStateHTTP() http.Handler {
 			)
 			if err != nil {
 				http.Error(writer, "failed to update camera state", http.StatusInternalServerError)
+
 				return
 			}
 		}
@@ -80,6 +86,7 @@ func (h *FDHandler) SendControlCommandHTTP() http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.Method != http.MethodPost {
 			http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+
 			return
 		}
 
@@ -88,23 +95,27 @@ func (h *FDHandler) SendControlCommandHTTP() http.Handler {
 		body, err := io.ReadAll(request.Body)
 		if err != nil {
 			http.Error(writer, "failed to read request body", http.StatusBadRequest)
+
 			return
 		}
 
 		command := &protov1.ControlCommand{}
 		if err := protojson.Unmarshal(body, command); err != nil {
 			http.Error(writer, "invalid request body", http.StatusBadRequest)
+
 			return
 		}
 
 		if command.GetCameraId() == "" {
 			http.Error(writer, "camera_id is required", http.StatusBadRequest)
+
 			return
 		}
 
 		result, err := fallback.uc.SendControlCommand(request.Context(), command)
 		if err != nil {
 			http.Error(writer, "failed to send control command", http.StatusInternalServerError)
+
 			return
 		}
 
@@ -115,6 +126,7 @@ func (h *FDHandler) SendControlCommandHTTP() http.Handler {
 		}.Marshal(result)
 		if err != nil {
 			http.Error(writer, "failed to encode response", http.StatusInternalServerError)
+
 			return
 		}
 
@@ -136,12 +148,14 @@ func (h *FDHandler) PollControlCommandsHTTP() http.Handler {
 	return http.HandlerFunc(func(writer http.ResponseWriter, request *http.Request) {
 		if request.Method != http.MethodGet {
 			http.Error(writer, "method not allowed", http.StatusMethodNotAllowed)
+
 			return
 		}
 
 		cameraID := request.URL.Query().Get("camera_id")
 		if cameraID == "" {
 			http.Error(writer, "camera_id is required", http.StatusBadRequest)
+
 			return
 		}
 
@@ -152,14 +166,17 @@ func (h *FDHandler) PollControlCommandsHTTP() http.Handler {
 			value, err := strconv.Atoi(timeoutMsParam)
 			if err != nil || value <= 0 {
 				http.Error(writer, "invalid timeout_ms", http.StatusBadRequest)
+
 				return
 			}
+
 			timeoutMs = value
 		}
 
 		commandCh, err := fallback.uc.SubscribePTZCommands(request.Context(), cameraID)
 		if err != nil {
 			http.Error(writer, "failed to subscribe to commands", http.StatusInternalServerError)
+
 			return
 		}
 
@@ -176,13 +193,16 @@ func (h *FDHandler) PollControlCommandsHTTP() http.Handler {
 		select {
 		case <-request.Context().Done():
 			http.Error(writer, "request cancelled", http.StatusRequestTimeout)
+
 			return
 		case <-timeout.C:
 			writer.WriteHeader(http.StatusNoContent)
+
 			return
 		case event, ok := <-commandCh:
 			if !ok || event == nil || (event.Command == nil && event.Result == nil) {
 				writer.WriteHeader(http.StatusNoContent)
+
 				return
 			}
 
@@ -196,6 +216,7 @@ func (h *FDHandler) PollControlCommandsHTTP() http.Handler {
 
 			if err := json.NewEncoder(writer).Encode(response); err != nil {
 				http.Error(writer, "failed to write response", http.StatusInternalServerError)
+
 				return
 			}
 		}

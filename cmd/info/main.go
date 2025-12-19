@@ -74,6 +74,7 @@ func outputJSON(
 		req := connect.NewRequest(&protov1.GetCameraRequest{
 			CameraId: camera.GetId(),
 		})
+
 		resp, err := client.GetCamera(ctx, req)
 		if err == nil && resp != nil {
 			info.Connection = resp.Msg.GetConnection()
@@ -116,17 +117,21 @@ func outputTable(
 		req := connect.NewRequest(&protov1.GetCameraRequest{
 			CameraId: camera.GetId(),
 		})
+
 		resp, err := client.GetCamera(ctx, req)
 		if err == nil && resp != nil {
 			connection := resp.Msg.GetConnection()
 			if connection != nil {
 				fmt.Printf("  Connection: %s", formatConnectionType(connection.GetType()))
+
 				if connection.GetAddress() != "" {
 					fmt.Printf(" %s", connection.GetAddress())
 				}
+
 				if connection.GetPort() > 0 {
 					fmt.Printf(":%d", connection.GetPort())
 				}
+
 				fmt.Println()
 			}
 		}

@@ -235,7 +235,9 @@ func (r *FDRepo) UnsubscribePTZCommands(cameraID string, ch <-chan *PTZCommandEv
 	for i, subscriber := range subscribers {
 		if subscriber == ch {
 			r.ptzSubscribers[cameraID] = append(subscribers[:i], subscribers[i+1:]...)
+
 			close(subscriber)
+
 			break
 		}
 	}

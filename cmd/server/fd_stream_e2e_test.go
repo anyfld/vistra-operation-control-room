@@ -48,7 +48,7 @@ func TestStreamControlCommands_PTZPubSub(t *testing.T) {
 	server, client := newFDTestServer(t)
 	defer server.Close()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	ctx, cancel := context.WithTimeout(t.Context(), 5*time.Second)
 	defer cancel()
 
 	cameraID := "cam-e2e-1"
@@ -92,6 +92,7 @@ func TestStreamControlCommands_PTZPubSub(t *testing.T) {
 	require.NotNil(t, commandResp.Msg.GetResult())
 
 	deadline := time.Now().Add(2 * time.Second)
+
 	var gotResult *protov1.ControlCommandResult
 
 	for time.Now().Before(deadline) {
@@ -119,6 +120,7 @@ func TestStreamControlCommands_PTZPubSub(t *testing.T) {
 
 		if res := pollResp.Msg.GetResult(); res != nil {
 			gotResult = res
+
 			break
 		}
 

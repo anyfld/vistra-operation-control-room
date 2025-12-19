@@ -3,7 +3,6 @@ package handlers
 import (
 	"context"
 	"errors"
-	"fmt"
 	"log"
 	"time"
 
@@ -244,7 +243,7 @@ func (h *FDHandler) StreamControlCommands(
 				return connect.NewResponse(&protov1.StreamControlCommandsResponse{
 					Status: &protov1.StreamControlCommandsStatus{
 						Connected: false,
-						Message:   fmt.Sprintf("subscription closed for camera: %s", cameraID),
+						Message:   "subscription closed for camera: " + cameraID,
 					},
 					TimestampMs: time.Now().UnixMilli(),
 				}), nil
@@ -293,7 +292,7 @@ func (h *FDHandler) StreamControlCommands(
 			return connect.NewResponse(&protov1.StreamControlCommandsResponse{
 				Status: &protov1.StreamControlCommandsStatus{
 					Connected: true,
-					Message:   fmt.Sprintf("no PTZ command payload for camera: %s", cameraID),
+					Message:   "no PTZ command payload for camera: " + cameraID,
 				},
 				TimestampMs: time.Now().UnixMilli(),
 			}), nil
@@ -301,7 +300,7 @@ func (h *FDHandler) StreamControlCommands(
 			return connect.NewResponse(&protov1.StreamControlCommandsResponse{
 				Status: &protov1.StreamControlCommandsStatus{
 					Connected: true,
-					Message:   fmt.Sprintf("no new PTZ events for camera: %s", cameraID),
+					Message:   "no new PTZ events for camera: " + cameraID,
 				},
 				TimestampMs: time.Now().UnixMilli(),
 			}), nil
@@ -319,6 +318,7 @@ func (h *FDHandler) StreamControlCommands(
 		if err != nil {
 			return nil, err
 		}
+
 		if result == nil {
 			return connect.NewResponse(&protov1.StreamControlCommandsResponse{}), nil
 		}

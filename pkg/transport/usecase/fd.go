@@ -73,6 +73,7 @@ func (u *FDUsecase) UnsubscribePTZCommands(
 	ch <-chan *infrastructure.PTZCommandEvent,
 ) error {
 	u.repo.UnsubscribePTZCommands(cameraID, ch)
+
 	return nil
 }
 

@@ -60,6 +60,7 @@ func main() {
 			sendPTZCommand(ctx, fdClient, cameraClient, scanner)
 		case "4":
 			fmt.Println("終了します。")
+
 			return
 		default:
 			fmt.Println("無効な選択です。もう一度お試しください。")
@@ -90,9 +91,11 @@ func registerCamera(
 	sampleCameras := generateSampleCameras(3)
 
 	fmt.Println("サンプルカメラ:")
+
 	for i, cam := range sampleCameras {
-		fmt.Printf("%d. %s (%s)\n", i+1, cam.Name, cam.Connection.Type.String())
+		fmt.Printf("%d. %s (%s)\n", i+1, cam.GetName(), cam.GetConnection().GetType().String())
 	}
+
 	fmt.Printf(
 		"追加するカメラ番号を選択 (1-%d)\nサンプルでは WebRTC カメラ (%s) を利用します: ",
 		len(sampleCameras),
@@ -104,9 +107,11 @@ func registerCamera(
 	}
 
 	choiceStr := strings.TrimSpace(scanner.Text())
+
 	choice, err := strconv.Atoi(choiceStr)
 	if err != nil || choice < 1 || choice > len(sampleCameras) {
 		fmt.Println("無効な選択です。")
+
 		return
 	}
 
@@ -115,12 +120,14 @@ func registerCamera(
 	resp, err := client.RegisterCamera(ctx, connect.NewRequest(req))
 	if err != nil {
 		fmt.Printf("エラー: カメラの登録に失敗しました: %v\n", err)
+
 		return
 	}
 
 	camera := resp.Msg.GetCamera()
 	if camera == nil {
 		fmt.Println("エラー: カメラの登録結果が nil です。")
+
 		return
 	}
 
@@ -138,12 +145,14 @@ func listCameras(ctx context.Context, client protov1connect.CameraServiceClient)
 	resp, err := client.ListCameras(ctx, connect.NewRequest(&protov1.ListCamerasRequest{}))
 	if err != nil {
 		fmt.Printf("エラー: カメラ一覧の取得に失敗しました: %v\n", err)
+
 		return
 	}
 
 	cameras := resp.Msg.GetCameras()
 	if len(cameras) == 0 {
 		fmt.Println("登録されているカメラがありません。")
+
 		return
 	}
 
@@ -166,19 +175,23 @@ func sendPTZCommand(
 	resp, err := cameraClient.ListCameras(ctx, connect.NewRequest(&protov1.ListCamerasRequest{}))
 	if err != nil {
 		fmt.Printf("エラー: カメラ一覧の取得に失敗しました: %v\n", err)
+
 		return
 	}
 
 	cameras := resp.Msg.GetCameras()
 	if len(cameras) == 0 {
 		fmt.Println("登録されているカメラがありません。")
+
 		return
 	}
 
 	fmt.Println("カメラ一覧:")
+
 	for i, camera := range cameras {
 		fmt.Printf("%d. %s (ID: %s)\n", i+1, camera.GetName(), camera.GetId())
 	}
+
 	fmt.Print("カメラ番号を選択: ")
 
 	if !scanner.Scan() {
@@ -186,9 +199,11 @@ func sendPTZCommand(
 	}
 
 	choiceStr := strings.TrimSpace(scanner.Text())
+
 	choice, err := strconv.Atoi(choiceStr)
 	if err != nil || choice < 1 || choice > len(cameras) {
 		fmt.Println("無効な選択です。")
+
 		return
 	}
 
@@ -204,6 +219,7 @@ func sendPTZCommand(
 	)
 	if err != nil {
 		fmt.Printf("エラー: カメラ能力情報の取得に失敗しました: %v\n", err)
+
 		return
 	}
 
@@ -245,23 +261,27 @@ func sendPTZCommand(
 				i+1,
 				err,
 			)
+
 			return
 		}
 
 		result := cmdResp.Msg.GetResult()
 		if result == nil {
 			fmt.Println("エラー: コマンド結果が nil です。")
+
 			return
 		}
 
 		fmt.Printf("  コマンドID: %s\n", result.GetCommandId())
 		fmt.Printf("  成功: %v\n", result.GetSuccess())
+
 		if result.GetErrorMessage() != "" {
 			fmt.Printf(
 				"  エラーメッセージ: %s\n",
 				result.GetErrorMessage(),
 			)
 		}
+
 		if result.GetResultingPtz() != nil {
 			ptz := result.GetResultingPtz()
 			fmt.Printf(
@@ -271,6 +291,7 @@ func sendPTZCommand(
 				ptz.GetZoom(),
 			)
 		}
+
 		fmt.Printf(
 			"  実行時間: %d ms\n",
 			result.GetExecutionTimeMs(),
@@ -406,10 +427,12 @@ func buildPTZScenario(
 			panMin = float64(capabilities.GetPanMin())
 			panMax = float64(capabilities.GetPanMax())
 		}
+
 		if capabilities.GetTiltMin() != 0 || capabilities.GetTiltMax() != 0 {
 			tiltMin = float64(capabilities.GetTiltMin())
 			tiltMax = float64(capabilities.GetTiltMax())
 		}
+
 		if capabilities.GetZoomMin() != 0 || capabilities.GetZoomMax() != 0 {
 			zoomMin = float64(capabilities.GetZoomMin())
 			zoomMax = float64(capabilities.GetZoomMax())
