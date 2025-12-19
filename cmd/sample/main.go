@@ -225,10 +225,12 @@ func sendPTZCommand(
 			TimeoutMs:     5000,
 		}
 
-		cmdResp, err := fdClient.SendControlCommand(
+		cmdResp, err := fdClient.StreamControlCommands(
 			ctx,
-			connect.NewRequest(&protov1.SendControlCommandRequest{
-				Command: command,
+			connect.NewRequest(&protov1.StreamControlCommandsRequest{
+				Message: &protov1.StreamControlCommandsRequest_Command{
+					Command: command,
+				},
 			}),
 		)
 		if err != nil {

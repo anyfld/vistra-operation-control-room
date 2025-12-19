@@ -197,20 +197,6 @@ func (h *FDHandler) CalculateFraming(
 	}), nil
 }
 
-func (h *FDHandler) SendControlCommand(
-	ctx context.Context,
-	req *connect.Request[protov1.SendControlCommandRequest],
-) (*connect.Response[protov1.SendControlCommandResponse], error) {
-	result, err := h.uc.SendControlCommand(ctx, req.Msg.GetCommand())
-	if err != nil {
-		return nil, err
-	}
-
-	return connect.NewResponse(&protov1.SendControlCommandResponse{
-		Result: result,
-	}), nil
-}
-
 func (h *FDHandler) StreamControlCommands(
 	ctx context.Context,
 	req *connect.Request[protov1.StreamControlCommandsRequest],

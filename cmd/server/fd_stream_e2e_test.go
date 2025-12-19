@@ -79,11 +79,17 @@ func TestStreamControlCommands_PTZPubSub(t *testing.T) {
 		},
 	}
 
-	sendReq := connect.NewRequest(&protov1.SendControlCommandRequest{
-		Command: command,
+	commandReq := connect.NewRequest(&protov1.StreamControlCommandsRequest{
+		Message: &protov1.StreamControlCommandsRequest_Command{
+			Command: command,
+		},
 	})
-	_, err = client.SendControlCommand(ctx, sendReq)
+
+	commandResp, err := client.StreamControlCommands(ctx, commandReq)
 	require.NoError(t, err)
+	require.NotNil(t, commandResp)
+	require.NotNil(t, commandResp.Msg)
+	require.NotNil(t, commandResp.Msg.GetResult())
 
 	deadline := time.Now().Add(2 * time.Second)
 	var gotResult *protov1.ControlCommandResult
