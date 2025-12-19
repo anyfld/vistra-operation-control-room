@@ -196,7 +196,7 @@ func (r *CameraRepo) GetAllConnectionStatuses() map[string]protov1.CameraStatus 
 }
 
 const (
-	heartbeatTimeoutSeconds = 30
+	heartbeatTimeoutSeconds = 10
 	millisecondsPerSecond   = 1000
 )
 
