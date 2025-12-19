@@ -313,14 +313,28 @@ func (h *FDHandler) StreamControlCommands(
 		}
 
 		if h.cameraUC != nil {
-			_, err := h.cameraUC.UpdateCameraState(
+			success, err := h.cameraUC.UpdateCameraState(
 				ctx,
 				state.GetCameraId(),
 				state.GetCurrentPtz(),
 				state.GetStatus(),
 			)
 			if err != nil {
+				if errors.Is(err, usecase.ErrCameraNotFound) {
+					return nil, connect.NewError(
+						connect.CodeNotFound,
+						err,
+					)
+				}
+
 				return nil, err
+			}
+
+			if !success {
+				return nil, connect.NewError(
+					connect.CodeNotFound,
+					errors.New("camera not found"),
+				)
 			}
 		}
 

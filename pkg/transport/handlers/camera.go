@@ -59,6 +59,13 @@ func (h *CameraHandler) UpdateCamera(
 ) (*connect.Response[protov1.UpdateCameraResponse], error) {
 	camera, err := h.uc.UpdateCamera(ctx, req.Msg)
 	if err != nil {
+		if errors.Is(err, usecase.ErrCameraNotFound) {
+			return nil, connect.NewError(
+				connect.CodeNotFound,
+				err,
+			)
+		}
+
 		return nil, err
 	}
 

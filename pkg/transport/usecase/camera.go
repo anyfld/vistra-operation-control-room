@@ -24,6 +24,8 @@ type CameraInteractor interface {
 	CheckAndUpdateDisconnectedCameras(ctx context.Context) error
 }
 
+var ErrCameraNotFound = errors.New("camera not found")
+
 type CameraUsecase struct {
 	repo *infrastructure.CameraRepo
 }
@@ -52,7 +54,7 @@ func (u *CameraUsecase) UpdateCamera(
 ) (*protov1.Camera, error) {
 	camera := u.repo.UpdateCamera(req.GetCameraId(), req)
 	if camera == nil {
-		return nil, errors.New("camera not found")
+		return nil, ErrCameraNotFound
 	}
 
 	return camera, nil
@@ -100,7 +102,7 @@ func (u *CameraUsecase) UpdateCameraState(
 ) (bool, error) {
 	success := u.repo.UpdateCameraState(cameraID, ptz, status)
 	if !success {
-		return false, errors.New("camera not found")
+		return false, ErrCameraNotFound
 	}
 
 	return true, nil
