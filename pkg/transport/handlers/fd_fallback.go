@@ -34,7 +34,11 @@ func (h *FDHandler) ReportCameraStateHTTP() http.Handler {
 			return
 		}
 
-		defer request.Body.Close()
+		defer func() {
+			if closeErr := request.Body.Close(); closeErr != nil {
+				_ = closeErr
+			}
+		}()
 
 		body, err := io.ReadAll(request.Body)
 		if err != nil {
@@ -90,7 +94,11 @@ func (h *FDHandler) SendControlCommandHTTP() http.Handler {
 			return
 		}
 
-		defer request.Body.Close()
+		defer func() {
+			if closeErr := request.Body.Close(); closeErr != nil {
+				_ = closeErr
+			}
+		}()
 
 		body, err := io.ReadAll(request.Body)
 		if err != nil {
@@ -139,7 +147,7 @@ func (h *FDHandler) SendControlCommandHTTP() http.Handler {
 type pollControlCommandsResponse struct {
 	Command     *protov1.ControlCommand       `json:"command,omitempty"`
 	Result      *protov1.ControlCommandResult `json:"result,omitempty"`
-	TimestampMs int64                         `json:"timestamp_ms,omitempty"`
+	TimestampMs int64                         `json:"timestampMs,omitempty"`
 }
 
 func (h *FDHandler) PollControlCommandsHTTP() http.Handler {
@@ -173,7 +181,9 @@ func (h *FDHandler) PollControlCommandsHTTP() http.Handler {
 			timeoutMs = value
 		}
 
-		commandCh, err := fallback.uc.SubscribePTZCommands(request.Context(), cameraID)
+		ctx := request.Context()
+
+		commandCh, err := fallback.uc.SubscribePTZCommands(ctx, cameraID)
 		if err != nil {
 			http.Error(writer, "failed to subscribe to commands", http.StatusInternalServerError)
 
@@ -181,7 +191,7 @@ func (h *FDHandler) PollControlCommandsHTTP() http.Handler {
 		}
 
 		defer func() {
-			unsubscribeErr := fallback.uc.UnsubscribePTZCommands(request.Context(), cameraID, commandCh)
+			unsubscribeErr := fallback.uc.UnsubscribePTZCommands(ctx, cameraID, commandCh)
 			if unsubscribeErr != nil {
 				_ = unsubscribeErr
 			}

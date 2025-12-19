@@ -18,7 +18,12 @@ type CameraInteractor interface {
 	) (*protov1.Camera, *protov1.CameraConnection, *protov1.CameraCapabilities, error)
 	ListCameras(ctx context.Context, req *protov1.ListCamerasRequest) ([]*protov1.Camera, error)
 	SwitchCameraMode(ctx context.Context, cameraID string, mode protov1.CameraMode) (bool, error)
-	UpdateCameraState(ctx context.Context, cameraID string, ptz *protov1.PTZParameters, status protov1.CameraStatus) (bool, error)
+	UpdateCameraState(
+		ctx context.Context,
+		cameraID string,
+		ptz *protov1.PTZParameters,
+		status protov1.CameraStatus,
+	) (bool, error)
 	GetConnectionStatus(ctx context.Context, cameraID string) (protov1.CameraStatus, bool, error)
 	GetAllConnectionStatuses(ctx context.Context, cameraIDs []string) (map[string]protov1.CameraStatus, error)
 	CheckAndUpdateDisconnectedCameras(ctx context.Context) error

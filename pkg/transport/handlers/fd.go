@@ -228,7 +228,12 @@ func (h *FDHandler) StreamControlCommands(
 		if err != nil {
 			return nil, err
 		}
-		defer h.uc.UnsubscribePTZCommands(ctx, cameraID, commandCh)
+
+		defer func() {
+			if unsubscribeErr := h.uc.UnsubscribePTZCommands(ctx, cameraID, commandCh); unsubscribeErr != nil {
+				_ = unsubscribeErr
+			}
+		}()
 
 		select {
 		case <-ctx.Done():
