@@ -702,7 +702,7 @@ func (s *webrtcStreamSender) readConfig() (*streamConfig, error) {
 }
 
 func (s *webrtcStreamSender) tryCombinedSource() error {
-	combinedSource := "ffmpeg:lavfi?input=testsrc2=s=1280x720:r=30#video=h264#audio=sine=frequency=1000"
+	combinedSource := "ffmpeg:#input=-f lavfi -i testsrc2=size=1280x720:rate=30 -f lavfi -i sine=frequency=1000#video=h264#audio=aac"
 	fmt.Printf("go2rtc にストリームを追加中 (組み合わせソース):\n")
 	fmt.Printf("  ソース: %s\n", combinedSource)
 
@@ -712,8 +712,8 @@ func (s *webrtcStreamSender) tryCombinedSource() error {
 }
 
 func (s *webrtcStreamSender) trySeparateSources() error {
-	videoSource := "ffmpeg:lavfi?input=testsrc2=s=1280x720:r=30#video=h264"
-	audioSource := "ffmpeg:lavfi?input=sine=frequency=1000#audio=aac"
+	videoSource := "ffmpeg:#input=-f lavfi -i testsrc2=size=1280x720:rate=30#video=h264"
+	audioSource := "ffmpeg:#input=-f lavfi -i sine=frequency=1000#audio=aac"
 	fmt.Printf("  ビデオソース: %s\n", videoSource)
 	fmt.Printf("  オーディオソース: %s\n", audioSource)
 
