@@ -2,11 +2,15 @@ package main
 
 import (
 	"bufio"
+	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -17,7 +21,11 @@ import (
 )
 
 const (
-	defaultServerURL = "http://localhost:8080"
+	defaultServerURL      = "http://localhost:8080"
+	defaultGo2rtcURL      = "http://localhost:1984"
+	defaultStreamName     = "camera"
+	defaultRTSPPort       = 8554
+	defaultStreamDuration = 0 // 0 means infinite
 )
 
 type ptzScenarioStep struct {
@@ -59,6 +67,10 @@ func main() {
 		case "3":
 			sendPTZCommand(ctx, fdClient, cameraClient, scanner)
 		case "4":
+			startDummyVideoStream(scanner)
+		case "5":
+			stopDummyVideoStream()
+		case "6":
 			fmt.Println("終了します。")
 
 			return
@@ -75,7 +87,9 @@ func printMenu() {
 	fmt.Println("1. カメラを追加")
 	fmt.Println("2. カメラ一覧を表示")
 	fmt.Println("3. PTZサンプルシナリオを実行")
-	fmt.Println("4. 終了")
+	fmt.Println("4. go2rtc にダミー動画を送信開始")
+	fmt.Println("5. go2rtc へのダミー動画送信を停止")
+	fmt.Println("6. 終了")
 	fmt.Println()
 }
 
@@ -505,4 +519,177 @@ func buildPTZScenario(
 			},
 		},
 	}
+}
+
+var dummyVideoCmd *exec.Cmd
+
+func startDummyVideoStream(scanner *bufio.Scanner) {
+	fmt.Println("\n--- go2rtc にダミー動画を送信開始 ---")
+
+	if dummyVideoCmd != nil && dummyVideoCmd.Process != nil {
+		fmt.Println("既にダミー動画の送信が開始されています。")
+		fmt.Print("既存のプロセスを停止して再開しますか？ (y/n): ")
+
+		if !scanner.Scan() {
+			return
+		}
+
+		answer := strings.TrimSpace(strings.ToLower(scanner.Text()))
+		if answer == "y" || answer == "yes" {
+			stopDummyVideoStream()
+		} else {
+			return
+		}
+	}
+
+	fmt.Printf("go2rtc URL (デフォルト: %s): ", defaultGo2rtcURL)
+	if !scanner.Scan() {
+		return
+	}
+
+	go2rtcURL := strings.TrimSpace(scanner.Text())
+	if go2rtcURL == "" {
+		go2rtcURL = defaultGo2rtcURL
+	}
+
+	fmt.Printf("ストリーム名 (デフォルト: %s): ", defaultStreamName)
+	if !scanner.Scan() {
+		return
+	}
+
+	streamName := strings.TrimSpace(scanner.Text())
+	if streamName == "" {
+		streamName = defaultStreamName
+	}
+
+	rtspURL := fmt.Sprintf("rtsp://localhost:%d/%s", defaultRTSPPort, streamName)
+
+	fmt.Printf("\nストリーム設定:\n")
+	fmt.Printf("  go2rtc URL: %s\n", go2rtcURL)
+	fmt.Printf("  ストリーム名: %s\n", streamName)
+	fmt.Printf("  RTSP URL: %s\n", rtspURL)
+	fmt.Println()
+
+	// go2rtc の API を使ってストリームを追加（FFmpeg テストパターンソースとして）
+	testPatternSource := "ffmpeg:testsrc2=size=1280x720:rate=30#video#audio=sine=frequency=1000"
+	if err := addStreamToGo2rtc(go2rtcURL, streamName, testPatternSource); err != nil {
+		fmt.Printf("警告: go2rtc へのストリーム追加に失敗しました: %v\n", err)
+		fmt.Println("FFmpeg で直接 RTSP ストリーミングを開始します...")
+
+		// FFmpeg を使ってテストパターンを生成し、RTSP ストリームとして送信
+		ffmpegArgs := []string{
+			"-f", "lavfi",
+			"-i", "testsrc2=size=1280x720:rate=30",
+			"-f", "lavfi",
+			"-i", "sine=frequency=1000:duration=0",
+			"-c:v", "libx264",
+			"-preset", "ultrafast",
+			"-tune", "zerolatency",
+			"-c:a", "aac",
+			"-f", "rtsp",
+			"-rtsp_transport", "tcp",
+			rtspURL,
+		}
+
+		cmd := exec.Command("ffmpeg", ffmpegArgs...)
+		cmd.Stdout = os.Stdout
+		cmd.Stderr = os.Stderr
+
+		dummyVideoCmd = cmd
+
+		fmt.Println("FFmpeg でダミー動画のストリーミングを開始します...")
+		fmt.Println("停止するには、メニューから「5. go2rtc へのダミー動画送信を停止」を選択してください。")
+		fmt.Println()
+
+		if err := cmd.Start(); err != nil {
+			fmt.Printf("エラー: FFmpeg の起動に失敗しました: %v\n", err)
+			dummyVideoCmd = nil
+
+			return
+		}
+
+		fmt.Printf("✓ ダミー動画のストリーミングが開始されました (PID: %d)\n", cmd.Process.Pid)
+		fmt.Printf("  go2rtc の WebRTC プレーヤー: %s/webrtc.html?src=%s&media=video+audio\n",
+			go2rtcURL, streamName)
+
+		return
+	}
+
+	// go2rtc の API でストリームを追加できた場合、FFmpeg プロセスは不要
+	dummyVideoCmd = nil
+	fmt.Printf("✓ go2rtc にストリーム '%s' を追加しました\n", streamName)
+	fmt.Printf("  go2rtc の WebRTC プレーヤー: %s/webrtc.html?src=%s&media=video+audio\n",
+		go2rtcURL, streamName)
+	fmt.Println("  ストリームを停止するには、go2rtc の API または設定ファイルから削除してください。")
+
+}
+
+func stopDummyVideoStream() {
+	fmt.Println("\n--- go2rtc へのダミー動画送信を停止 ---")
+
+	if dummyVideoCmd == nil || dummyVideoCmd.Process == nil {
+		fmt.Println("ダミー動画の送信プロセスが見つかりません。")
+		fmt.Println("go2rtc の API で追加されたストリームの場合は、")
+		fmt.Println("go2rtc の API または設定ファイルから削除してください。")
+
+		return
+	}
+
+	fmt.Printf("プロセス (PID: %d) を停止します...\n", dummyVideoCmd.Process.Pid)
+
+	if err := dummyVideoCmd.Process.Kill(); err != nil {
+		fmt.Printf("エラー: プロセスの停止に失敗しました: %v\n", err)
+
+		return
+	}
+
+	if err := dummyVideoCmd.Wait(); err != nil {
+		if exitError, ok := err.(*exec.ExitError); ok {
+			if exitError.ExitCode() != -1 {
+				fmt.Printf("警告: プロセスの終了コード: %d\n", exitError.ExitCode())
+			}
+		}
+	}
+
+	dummyVideoCmd = nil
+	fmt.Println("✓ ダミー動画の送信が停止されました。")
+}
+
+func addStreamToGo2rtc(go2rtcURL, streamName, source string) error {
+	streamConfig := map[string]interface{}{
+		streamName: source,
+	}
+
+	jsonData, err := json.Marshal(streamConfig)
+	if err != nil {
+		return fmt.Errorf("JSON のマーシャルに失敗: %w", err)
+	}
+
+	apiURL := fmt.Sprintf("%s/api/streams", go2rtcURL)
+	req, err := http.NewRequest("POST", apiURL, bytes.NewBuffer(jsonData))
+	if err != nil {
+		return fmt.Errorf("リクエストの作成に失敗: %w", err)
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	client := &http.Client{Timeout: 5 * time.Second}
+	resp, err := client.Do(req)
+	if err != nil {
+		return fmt.Errorf("リクエストの送信に失敗: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("レスポンスの読み込みに失敗: %w", err)
+	}
+
+	if resp.StatusCode != http.StatusOK && resp.StatusCode != http.StatusCreated {
+		return fmt.Errorf("API エラー (ステータス: %d): %s", resp.StatusCode, string(body))
+	}
+
+	fmt.Printf("✓ go2rtc にストリーム '%s' を追加しました\n", streamName)
+
+	return nil
 }
