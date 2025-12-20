@@ -14,6 +14,8 @@ import (
 	"strings"
 	"time"
 
+	"math"
+
 	"connectrpc.com/connect"
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
 	"github.com/anyfld/vistra-operation-control-room/gen/proto/v1/protov1connect"
@@ -41,7 +43,7 @@ func main() {
 		&http.Client{Timeout: 5 * time.Second},
 		*serverURL,
 	)
-	fdClient := protov1connect.NewFDServiceClient(
+	ptzClient := protov1connect.NewPTZServiceClient(
 		&http.Client{Timeout: 5 * time.Second},
 		*serverURL,
 	)
@@ -64,7 +66,7 @@ func main() {
 		case "2":
 			listCameras(ctx, cameraClient)
 		case "3":
-			sendPTZCommand(ctx, fdClient, cameraClient, scanner)
+			sendPTZCommand(ctx, ptzClient, cameraClient, scanner)
 		case "4":
 			startDummyVideoStream(scanner)
 		case "5":
@@ -179,7 +181,7 @@ func listCameras(ctx context.Context, client protov1connect.CameraServiceClient)
 
 func sendPTZCommand(
 	ctx context.Context,
-	fdClient protov1connect.FDServiceClient,
+	ptzClient protov1connect.PTZServiceClient,
 	cameraClient protov1connect.CameraServiceClient,
 	scanner *bufio.Scanner,
 ) {
@@ -248,24 +250,14 @@ func sendPTZCommand(
 	for i, step := range scenario {
 		fmt.Printf("\n%s\n", step.description)
 
-		command := &protov1.ControlCommand{
-			CommandId: fmt.Sprintf(
-				"cmd-%d-%d",
-				time.Now().UnixNano(),
-				i+1,
-			),
-			CameraId:      selectedCamera.GetId(),
-			Type:          protov1.ControlCommandType_CONTROL_COMMAND_TYPE_PTZ_ABSOLUTE,
-			PtzParameters: step.ptz,
-			TimeoutMs:     5000,
-		}
+		ptzCommand := convertPTZParametersToPTZCommand(step.ptz, capabilities)
 
-		cmdResp, err := fdClient.StreamControlCommands(
+		cmdResp, err := ptzClient.SendPTZCommand(
 			ctx,
-			connect.NewRequest(&protov1.StreamControlCommandsRequest{
-				Message: &protov1.StreamControlCommandsRequest_Command{
-					Command: command,
-				},
+			connect.NewRequest(&protov1.SendPTZCommandRequest{
+				CameraId: selectedCamera.GetId(),
+				Command:  ptzCommand,
+				SourceId:  "sample-client",
 			}),
 		)
 		if err != nil {
@@ -278,37 +270,18 @@ func sendPTZCommand(
 			return
 		}
 
-		result := cmdResp.Msg.GetResult()
-		if result == nil {
-			fmt.Println("エラー: コマンド結果が nil です。")
+		if !cmdResp.Msg.GetAccepted() {
+			fmt.Printf(
+				"エラー: コマンドが受理されませんでした: %s\n",
+				cmdResp.Msg.GetErrorMessage(),
+			)
 
 			return
 		}
 
-		fmt.Printf("  コマンドID: %s\n", result.GetCommandId())
-		fmt.Printf("  成功: %v\n", result.GetSuccess())
-
-		if result.GetErrorMessage() != "" {
-			fmt.Printf(
-				"  エラーメッセージ: %s\n",
-				result.GetErrorMessage(),
-			)
-		}
-
-		if result.GetResultingPtz() != nil {
-			ptz := result.GetResultingPtz()
-			fmt.Printf(
-				"  結果PTZ: Pan=%.2f, Tilt=%.2f, Zoom=%.2f\n",
-				ptz.GetPan(),
-				ptz.GetTilt(),
-				ptz.GetZoom(),
-			)
-		}
-
-		fmt.Printf(
-			"  実行時間: %d ms\n",
-			result.GetExecutionTimeMs(),
-		)
+		taskID := cmdResp.Msg.GetTaskId()
+		fmt.Printf("  タスクID: %s\n", taskID)
+		fmt.Printf("  受理: %v\n", cmdResp.Msg.GetAccepted())
 
 		if i != len(scenario)-1 {
 			fmt.Println("  次のステップまで 1 秒待機します...")
@@ -415,6 +388,98 @@ func generateSampleCameras(count int) []*protov1.RegisterCameraRequest {
 	}
 
 	return cameras[:count]
+}
+
+// convertPTZParametersToPTZCommand はPTZParametersをPTZCommandに変換します。
+// PTZParametersは角度ベース（度）で、PTZPositionは正規化座標（-1.0 ~ 1.0）です。
+func convertPTZParametersToPTZCommand(
+	ptz *protov1.PTZParameters,
+	capabilities *protov1.CameraCapabilities,
+) *protov1.PTZCommand {
+	const (
+		defaultPanMin  = -180.0
+		defaultPanMax  = 180.0
+		defaultTiltMin = -90.0
+		defaultTiltMax = 90.0
+		defaultZoomMin = 1.0
+		defaultZoomMax = 10.0
+	)
+
+	panMin := defaultPanMin
+	panMax := defaultPanMax
+	tiltMin := defaultTiltMin
+	tiltMax := defaultTiltMax
+	zoomMin := defaultZoomMin
+	zoomMax := defaultZoomMax
+
+	if capabilities != nil && capabilities.GetSupportsPtz() {
+		if capabilities.GetPanMin() != 0 || capabilities.GetPanMax() != 0 {
+			panMin = float64(capabilities.GetPanMin())
+			panMax = float64(capabilities.GetPanMax())
+		}
+
+		if capabilities.GetTiltMin() != 0 || capabilities.GetTiltMax() != 0 {
+			tiltMin = float64(capabilities.GetTiltMin())
+			tiltMax = float64(capabilities.GetTiltMax())
+		}
+
+		if capabilities.GetZoomMin() != 0 || capabilities.GetZoomMax() != 0 {
+			zoomMin = float64(capabilities.GetZoomMin())
+			zoomMax = float64(capabilities.GetZoomMax())
+		}
+	}
+
+	// 角度を正規化座標に変換
+	panRange := panMax - panMin
+	tiltRange := tiltMax - tiltMin
+	zoomRange := zoomMax - zoomMin
+
+	var x, y, z float32
+
+	if panRange > 0 {
+		x = float32(2.0*(float64(ptz.GetPan())-panMin)/panRange - 1.0)
+		x = float32(math.Max(-1.0, math.Min(1.0, float64(x))))
+	} else {
+		x = 0
+	}
+
+	if tiltRange > 0 {
+		y = float32(2.0*(float64(ptz.GetTilt())-tiltMin)/tiltRange - 1.0)
+		y = float32(math.Max(-1.0, math.Min(1.0, float64(y))))
+	} else {
+		y = 0
+	}
+
+	if zoomRange > 0 {
+		z = float32((float64(ptz.GetZoom()) - zoomMin) / zoomRange)
+		z = float32(math.Max(0.0, math.Min(1.0, float64(z))))
+	} else {
+		z = 0
+	}
+
+	position := &protov1.PTZPosition{
+		X: x,
+		Y: y,
+		Z: z,
+	}
+
+	speed := &protov1.PTZSpeed{
+		PanSpeed:  ptz.GetPanSpeed(),
+		TiltSpeed: ptz.GetTiltSpeed(),
+		ZoomSpeed: ptz.GetZoomSpeed(),
+	}
+
+	absoluteMove := &protov1.AbsoluteMoveCommand{
+		Position: position,
+		Speed:    speed,
+	}
+
+	return &protov1.PTZCommand{
+		OperationType: protov1.PTZOperationType_PTZ_OPERATION_TYPE_ABSOLUTE_MOVE,
+		Command: &protov1.PTZCommand_AbsoluteMove{
+			AbsoluteMove: absoluteMove,
+		},
+	}
 }
 
 func buildPTZScenario(

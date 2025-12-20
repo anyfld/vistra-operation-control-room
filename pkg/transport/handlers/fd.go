@@ -198,41 +198,19 @@ func (h *FDHandler) CalculateFraming(
 	}), nil
 }
 
+// StreamControlCommands は廃止されました。
+// 新しいPTZServiceのPollingとSendPTZCommandを使用してください。
 func (h *FDHandler) StreamControlCommands(
 	ctx context.Context,
 	req *connect.Request[protov1.StreamControlCommandsRequest],
 ) (*connect.Response[protov1.StreamControlCommandsResponse], error) {
-	message := req.Msg
-	if message == nil {
-		return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
-			// Command, Result, Status, TimestampMs are optional for empty response
-		}), nil
-	}
-
-	if init := message.GetInit(); init != nil {
-		return h.handleInitMessage(ctx, init)
-	}
-
-	if command := message.GetCommand(); command != nil {
-		return h.handleCommandMessage(ctx, command)
-	}
-
-	if message.GetResult() != nil {
-		return h.handleResultMessage()
-	}
-
-	if state := message.GetState(); state != nil {
-		return h.handleStateMessage(ctx, state)
-	}
-
-	return connect.NewResponse(&protov1.StreamControlCommandsResponse{ //nolint:exhaustruct
-		Status: &protov1.StreamControlCommandsStatus{
-			Connected: true,
-			Message:   "no operation",
-		},
-		TimestampMs: time.Now().UnixMilli(),
-		// Command, Result are optional
-	}), nil
+	return nil, connect.NewError(
+		connect.CodeUnimplemented,
+		errors.New(
+			"StreamControlCommands is deprecated. "+
+				"Please use PTZService.Polling and PTZService.SendPTZCommand instead",
+		),
+	)
 }
 
 func (h *FDHandler) handleInitMessage(
