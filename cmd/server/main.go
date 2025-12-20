@@ -11,6 +11,7 @@ import (
 	"time"
 
 	"connectrpc.com/connect"
+	"github.com/joho/godotenv"
 	"golang.org/x/net/http2"
 	"golang.org/x/net/http2/h2c"
 
@@ -40,6 +41,10 @@ func (h *ExampleServiceHandler) Ping(
 }
 
 func main() {
+	if err := godotenv.Load(); err != nil {
+		log.Printf("Warning: Error loading .env file: %v", err)
+	}
+
 	cameraRepo := infrastructure.NewCameraRepo()
 	mux := setupHandlers(cameraRepo)
 	addr := getServerAddress()

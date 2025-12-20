@@ -4,6 +4,10 @@ build:
 	go build -o bin/server ./cmd/server
 
 run:
+	@if [ ! -f .env ]; then \
+		cp .env.example .env; \
+		echo "Created .env from .env.example"; \
+	fi
 	go run ./cmd/server
 
 info:

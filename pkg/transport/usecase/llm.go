@@ -6,7 +6,6 @@ import (
 	protov1 "github.com/anyfld/vistra-operation-control-room/gen/proto/v1"
 	"github.com/anyfld/vistra-operation-control-room/pkg/llm/domain"
 	"github.com/anyfld/vistra-operation-control-room/pkg/llm/usecase/interactor"
-	"google.golang.org/genai"
 )
 
 // LLMInteractor はLLMサービスのユースケースインターフェースです。
@@ -33,15 +32,15 @@ func (u *LLMUsecase) Chat(
 	req *protov1.ChatRequest,
 ) (*protov1.ChatResponse, error) {
 	systemPrompt := "You are a helpful assistant."
-	if req.GetSystemPrompt() != nil {
-		systemPrompt = *req.SystemPrompt
+	if systemPromptValue := req.GetSystemPrompt(); systemPromptValue != "" {
+		systemPrompt = systemPromptValue
 	}
 
 	history := make([]*domain.Content, 0, len(req.GetHistory()))
 	for _, msg := range req.GetHistory() {
-		history = append(history, &genai.Content{
+		history = append(history, &domain.Content{
 			Role:  msg.GetRole(),
-			Parts: []*genai.Part{{Text: msg.GetContent()}},
+			Parts: []*domain.Part{{Text: msg.GetContent()}},
 		})
 	}
 
