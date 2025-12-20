@@ -23,6 +23,8 @@ const _ = connect.IsAtLeastVersion1_13_0
 const (
 	// ExampleServiceName is the fully-qualified name of the ExampleService service.
 	ExampleServiceName = "v1.ExampleService"
+	// ConfigServiceName is the fully-qualified name of the ConfigService service.
+	ConfigServiceName = "v1.ConfigService"
 )
 
 // These constants are the fully-qualified names of the RPCs defined in this package. They're
@@ -35,6 +37,9 @@ const (
 const (
 	// ExampleServicePingProcedure is the fully-qualified name of the ExampleService's Ping RPC.
 	ExampleServicePingProcedure = "/v1.ExampleService/Ping"
+	// ConfigServiceGetGlobalConfigProcedure is the fully-qualified name of the ConfigService's
+	// GetGlobalConfig RPC.
+	ConfigServiceGetGlobalConfigProcedure = "/v1.ConfigService/GetGlobalConfig"
 )
 
 // ExampleServiceClient is a client for the v1.ExampleService service.
@@ -105,4 +110,76 @@ type UnimplementedExampleServiceHandler struct{}
 
 func (UnimplementedExampleServiceHandler) Ping(context.Context, *connect.Request[v1.PingRequest]) (*connect.Response[v1.PingResponse], error) {
 	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.ExampleService.Ping is not implemented"))
+}
+
+// ConfigServiceClient is a client for the v1.ConfigService service.
+type ConfigServiceClient interface {
+	// グローバル設定取得
+	GetGlobalConfig(context.Context, *connect.Request[v1.GetGlobalConfigRequest]) (*connect.Response[v1.GetGlobalConfigResponse], error)
+}
+
+// NewConfigServiceClient constructs a client for the v1.ConfigService service. By default, it uses
+// the Connect protocol with the binary Protobuf Codec, asks for gzipped responses, and sends
+// uncompressed requests. To use the gRPC or gRPC-Web protocols, supply the connect.WithGRPC() or
+// connect.WithGRPCWeb() options.
+//
+// The URL supplied here should be the base URL for the Connect or gRPC server (for example,
+// http://api.acme.com or https://acme.com/grpc).
+func NewConfigServiceClient(httpClient connect.HTTPClient, baseURL string, opts ...connect.ClientOption) ConfigServiceClient {
+	baseURL = strings.TrimRight(baseURL, "/")
+	configServiceMethods := v1.File_v1_service_proto.Services().ByName("ConfigService").Methods()
+	return &configServiceClient{
+		getGlobalConfig: connect.NewClient[v1.GetGlobalConfigRequest, v1.GetGlobalConfigResponse](
+			httpClient,
+			baseURL+ConfigServiceGetGlobalConfigProcedure,
+			connect.WithSchema(configServiceMethods.ByName("GetGlobalConfig")),
+			connect.WithClientOptions(opts...),
+		),
+	}
+}
+
+// configServiceClient implements ConfigServiceClient.
+type configServiceClient struct {
+	getGlobalConfig *connect.Client[v1.GetGlobalConfigRequest, v1.GetGlobalConfigResponse]
+}
+
+// GetGlobalConfig calls v1.ConfigService.GetGlobalConfig.
+func (c *configServiceClient) GetGlobalConfig(ctx context.Context, req *connect.Request[v1.GetGlobalConfigRequest]) (*connect.Response[v1.GetGlobalConfigResponse], error) {
+	return c.getGlobalConfig.CallUnary(ctx, req)
+}
+
+// ConfigServiceHandler is an implementation of the v1.ConfigService service.
+type ConfigServiceHandler interface {
+	// グローバル設定取得
+	GetGlobalConfig(context.Context, *connect.Request[v1.GetGlobalConfigRequest]) (*connect.Response[v1.GetGlobalConfigResponse], error)
+}
+
+// NewConfigServiceHandler builds an HTTP handler from the service implementation. It returns the
+// path on which to mount the handler and the handler itself.
+//
+// By default, handlers support the Connect, gRPC, and gRPC-Web protocols with the binary Protobuf
+// and JSON codecs. They also support gzip compression.
+func NewConfigServiceHandler(svc ConfigServiceHandler, opts ...connect.HandlerOption) (string, http.Handler) {
+	configServiceMethods := v1.File_v1_service_proto.Services().ByName("ConfigService").Methods()
+	configServiceGetGlobalConfigHandler := connect.NewUnaryHandler(
+		ConfigServiceGetGlobalConfigProcedure,
+		svc.GetGlobalConfig,
+		connect.WithSchema(configServiceMethods.ByName("GetGlobalConfig")),
+		connect.WithHandlerOptions(opts...),
+	)
+	return "/v1.ConfigService/", http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case ConfigServiceGetGlobalConfigProcedure:
+			configServiceGetGlobalConfigHandler.ServeHTTP(w, r)
+		default:
+			http.NotFound(w, r)
+		}
+	})
+}
+
+// UnimplementedConfigServiceHandler returns CodeUnimplemented from all methods.
+type UnimplementedConfigServiceHandler struct{}
+
+func (UnimplementedConfigServiceHandler) GetGlobalConfig(context.Context, *connect.Request[v1.GetGlobalConfigRequest]) (*connect.Response[v1.GetGlobalConfigResponse], error) {
+	return nil, connect.NewError(connect.CodeUnimplemented, errors.New("v1.ConfigService.GetGlobalConfig is not implemented"))
 }

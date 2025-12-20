@@ -101,6 +101,133 @@ func (x *PingResponse) GetMessage() string {
 	return ""
 }
 
+type GetGlobalConfigRequest struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGlobalConfigRequest) Reset() {
+	*x = GetGlobalConfigRequest{}
+	mi := &file_v1_service_proto_msgTypes[2]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGlobalConfigRequest) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGlobalConfigRequest) ProtoMessage() {}
+
+func (x *GetGlobalConfigRequest) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_service_proto_msgTypes[2]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGlobalConfigRequest.ProtoReflect.Descriptor instead.
+func (*GetGlobalConfigRequest) Descriptor() ([]byte, []int) {
+	return file_v1_service_proto_rawDescGZIP(), []int{2}
+}
+
+type GetGlobalConfigResponse struct {
+	state         protoimpl.MessageState `protogen:"open.v1"`
+	Config        *GlobalConfig          `protobuf:"bytes,1,opt,name=config,proto3" json:"config,omitempty"`
+	unknownFields protoimpl.UnknownFields
+	sizeCache     protoimpl.SizeCache
+}
+
+func (x *GetGlobalConfigResponse) Reset() {
+	*x = GetGlobalConfigResponse{}
+	mi := &file_v1_service_proto_msgTypes[3]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GetGlobalConfigResponse) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GetGlobalConfigResponse) ProtoMessage() {}
+
+func (x *GetGlobalConfigResponse) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_service_proto_msgTypes[3]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GetGlobalConfigResponse.ProtoReflect.Descriptor instead.
+func (*GetGlobalConfigResponse) Descriptor() ([]byte, []int) {
+	return file_v1_service_proto_rawDescGZIP(), []int{3}
+}
+
+func (x *GetGlobalConfigResponse) GetConfig() *GlobalConfig {
+	if x != nil {
+		return x.Config
+	}
+	return nil
+}
+
+// グローバル設定
+type GlobalConfig struct {
+	state protoimpl.MessageState `protogen:"open.v1"`
+	// WebRTC接続URLテンプレート
+	// プレースホルダー {webrtc_connection_name} を含む
+	WebrtcUrlTemplate string `protobuf:"bytes,1,opt,name=webrtc_url_template,json=webrtcUrlTemplate,proto3" json:"webrtc_url_template,omitempty"`
+	unknownFields     protoimpl.UnknownFields
+	sizeCache         protoimpl.SizeCache
+}
+
+func (x *GlobalConfig) Reset() {
+	*x = GlobalConfig{}
+	mi := &file_v1_service_proto_msgTypes[4]
+	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+	ms.StoreMessageInfo(mi)
+}
+
+func (x *GlobalConfig) String() string {
+	return protoimpl.X.MessageStringOf(x)
+}
+
+func (*GlobalConfig) ProtoMessage() {}
+
+func (x *GlobalConfig) ProtoReflect() protoreflect.Message {
+	mi := &file_v1_service_proto_msgTypes[4]
+	if x != nil {
+		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
+		if ms.LoadMessageInfo() == nil {
+			ms.StoreMessageInfo(mi)
+		}
+		return ms
+	}
+	return mi.MessageOf(x)
+}
+
+// Deprecated: Use GlobalConfig.ProtoReflect.Descriptor instead.
+func (*GlobalConfig) Descriptor() ([]byte, []int) {
+	return file_v1_service_proto_rawDescGZIP(), []int{4}
+}
+
+func (x *GlobalConfig) GetWebrtcUrlTemplate() string {
+	if x != nil {
+		return x.WebrtcUrlTemplate
+	}
+	return ""
+}
+
 var File_v1_service_proto protoreflect.FileDescriptor
 
 const file_v1_service_proto_rawDesc = "" +
@@ -108,9 +235,16 @@ const file_v1_service_proto_rawDesc = "" +
 	"\x10v1/service.proto\x12\x02v1\"\r\n" +
 	"\vPingRequest\"(\n" +
 	"\fPingResponse\x12\x18\n" +
-	"\amessage\x18\x01 \x01(\tR\amessage2=\n" +
+	"\amessage\x18\x01 \x01(\tR\amessage\"\x18\n" +
+	"\x16GetGlobalConfigRequest\"C\n" +
+	"\x17GetGlobalConfigResponse\x12(\n" +
+	"\x06config\x18\x01 \x01(\v2\x10.v1.GlobalConfigR\x06config\">\n" +
+	"\fGlobalConfig\x12.\n" +
+	"\x13webrtc_url_template\x18\x01 \x01(\tR\x11webrtcUrlTemplate2=\n" +
 	"\x0eExampleService\x12+\n" +
-	"\x04Ping\x12\x0f.v1.PingRequest\x1a\x10.v1.PingResponse\"\x00BFZDgithub.com/anyfld/vistra-operation-control-room/gen/proto/v1;protov1b\x06proto3"
+	"\x04Ping\x12\x0f.v1.PingRequest\x1a\x10.v1.PingResponse\"\x002]\n" +
+	"\rConfigService\x12L\n" +
+	"\x0fGetGlobalConfig\x12\x1a.v1.GetGlobalConfigRequest\x1a\x1b.v1.GetGlobalConfigResponse\"\x00BFZDgithub.com/anyfld/vistra-operation-control-room/gen/proto/v1;protov1b\x06proto3"
 
 var (
 	file_v1_service_proto_rawDescOnce sync.Once
@@ -124,19 +258,25 @@ func file_v1_service_proto_rawDescGZIP() []byte {
 	return file_v1_service_proto_rawDescData
 }
 
-var file_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_v1_service_proto_msgTypes = make([]protoimpl.MessageInfo, 5)
 var file_v1_service_proto_goTypes = []any{
-	(*PingRequest)(nil),  // 0: v1.PingRequest
-	(*PingResponse)(nil), // 1: v1.PingResponse
+	(*PingRequest)(nil),             // 0: v1.PingRequest
+	(*PingResponse)(nil),            // 1: v1.PingResponse
+	(*GetGlobalConfigRequest)(nil),  // 2: v1.GetGlobalConfigRequest
+	(*GetGlobalConfigResponse)(nil), // 3: v1.GetGlobalConfigResponse
+	(*GlobalConfig)(nil),            // 4: v1.GlobalConfig
 }
 var file_v1_service_proto_depIdxs = []int32{
-	0, // 0: v1.ExampleService.Ping:input_type -> v1.PingRequest
-	1, // 1: v1.ExampleService.Ping:output_type -> v1.PingResponse
-	1, // [1:2] is the sub-list for method output_type
-	0, // [0:1] is the sub-list for method input_type
-	0, // [0:0] is the sub-list for extension type_name
-	0, // [0:0] is the sub-list for extension extendee
-	0, // [0:0] is the sub-list for field type_name
+	4, // 0: v1.GetGlobalConfigResponse.config:type_name -> v1.GlobalConfig
+	0, // 1: v1.ExampleService.Ping:input_type -> v1.PingRequest
+	2, // 2: v1.ConfigService.GetGlobalConfig:input_type -> v1.GetGlobalConfigRequest
+	1, // 3: v1.ExampleService.Ping:output_type -> v1.PingResponse
+	3, // 4: v1.ConfigService.GetGlobalConfig:output_type -> v1.GetGlobalConfigResponse
+	3, // [3:5] is the sub-list for method output_type
+	1, // [1:3] is the sub-list for method input_type
+	1, // [1:1] is the sub-list for extension type_name
+	1, // [1:1] is the sub-list for extension extendee
+	0, // [0:1] is the sub-list for field type_name
 }
 
 func init() { file_v1_service_proto_init() }
@@ -150,9 +290,9 @@ func file_v1_service_proto_init() {
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
 			RawDescriptor: unsafe.Slice(unsafe.StringData(file_v1_service_proto_rawDesc), len(file_v1_service_proto_rawDesc)),
 			NumEnums:      0,
-			NumMessages:   2,
+			NumMessages:   5,
 			NumExtensions: 0,
-			NumServices:   1,
+			NumServices:   2,
 		},
 		GoTypes:           file_v1_service_proto_goTypes,
 		DependencyIndexes: file_v1_service_proto_depIdxs,
